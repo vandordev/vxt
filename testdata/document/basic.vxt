@@ -1,0 +1,5 @@
+@template hello
+@input name string
+@file "hello.txt"
+Hello {{ name }}
+@endfile

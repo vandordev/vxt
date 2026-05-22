@@ -19,3 +19,16 @@ func TestCompileSingleFileReturnsCompiledTemplate(t *testing.T) {
 		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
 	}
 }
+
+func TestCompileDocumentReturnsCompiledDocument(t *testing.T) {
+	src := source.Source{
+		ID:   "basic-doc.vxt",
+		Text: "@template hello\n@input name string\n@file \"hello.txt\"\nHello {{ name }}\n@endfile\n",
+	}
+
+	result := runtime.CompileDocument(src)
+
+	if result.Document == nil {
+		t.Fatal("expected compiled document")
+	}
+}

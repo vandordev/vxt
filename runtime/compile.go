@@ -11,6 +11,7 @@ import (
 
 type CompileResult struct {
 	Template    *model.CompiledTemplate
+	Document    *model.CompiledDocument
 	Diagnostics []diag.Diagnostic
 }
 
@@ -30,6 +31,28 @@ func CompileSingle(src source.Source) CompileResult {
 			Span: source.Span{
 				SourceID: src.ID,
 				Start:    strings.Index(src.Text, "{{"),
+				End:      len(src.Text),
+			},
+		}},
+	}
+}
+
+func CompileDocument(src source.Source) CompileResult {
+	doc, err := syntax.ParseDocument(src)
+	if err == nil {
+		return CompileResult{
+			Document: doc,
+		}
+	}
+
+	return CompileResult{
+		Diagnostics: []diag.Diagnostic{{
+			Code:     diag.CodeParseUnexpectedEOF,
+			Severity: diag.SeverityError,
+			Message:  err.Error(),
+			Span: source.Span{
+				SourceID: src.ID,
+				Start:    0,
 				End:      len(src.Text),
 			},
 		}},
