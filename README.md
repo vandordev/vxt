@@ -25,3 +25,35 @@ Explicit v0.1 non-goals:
 - registry or package semantics
 - CLI behavior
 - AST manipulation as a public contract
+
+## Public Concepts
+
+The current public model revolves around:
+
+- `source.Source`
+- `runtime.CompileResult`
+- `model.CompiledTemplate`
+- `model.CompiledDocument`
+- `runtime.ValidationResult`
+- `plan.Plan`
+- `diag.Diagnostic`
+- `write.OutputTarget`
+
+## Current v0.1 Surface
+
+Implemented now:
+
+- `vxt.RenderSingleFile(...)`
+- `runtime.CompileSingle(...)`
+- `runtime.CompileDocument(...)`
+- `runtime.ValidateDocument(...)`
+- `runtime.PlanDocument(...)`
+- `runtime.WritePlan(...)`
+
+Output targets:
+
+- memory target
+- filesystem target
+
+Hooks are exposed only as planned metadata in document plans. They are not
+executed by `vxt` in v0.1.
