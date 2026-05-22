@@ -1,0 +1,14 @@
+package {{ package_name }}
+
+type {{ query_name }}Input struct {
+}
+
+type {{ query_name }}Output struct {
+}
+
+type {{ receiver_name }}Service struct {
+}
+
+func New{{ query_name }}() *{{ receiver_name }}Service {
+	return &{{ receiver_name }}Service{}
+}

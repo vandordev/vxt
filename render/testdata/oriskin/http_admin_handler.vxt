@@ -1,0 +1,21 @@
+package httpadmin
+
+type {{ name }}Input struct {
+{{ each path_params as path_param }}	{{ path_param.field_name }} string `path:"{{ path_param.raw_name }}"`
+{{ end each }}{{ if paginated }}	Page httpcontract.OptionalParam[int] `query:"page"`
+	PerPage httpcontract.OptionalParam[int] `query:"per_page"`
+{{ end if }}{{ if has_body }}	Body {{ name }}RequestBody `json:"body" contentType:"application/json"`
+{{ end if }}}
+
+{{ if has_body }}type {{ name }}RequestBody struct{}
+
+{{ end if }}type {{ receiver }} struct {
+	api httpcontract.API
+}
+
+func (h *{{ receiver }}) RegisterRoutes() {
+	method.{{ method }}(h.api, "{{ path }}", method.Operation{
+		Summary: "{{ summary }}",
+		Tags: []string{"{{ tag }}"},
+	}, h.Handle)
+}

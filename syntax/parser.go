@@ -16,23 +16,50 @@ type Part struct {
 	Expr string
 }
 
-func ParseTemplate(src source.Source) ([]Part, error) {
+type Node interface {
+	isNode()
+}
+
+type TextNode struct {
+	Text string
+}
+
+type ExprNode struct {
+	Expr string
+}
+
+type IfNode struct {
+	Cond string
+	Then []Node
+	Else []Node
+}
+
+type EachNode struct {
+	Collection string
+	Item       string
+	Body       []Node
+}
+
+func (TextNode) isNode() {}
+func (ExprNode) isNode() {}
+func (IfNode) isNode()   {}
+func (EachNode) isNode() {}
+
+func ParseTemplate(src source.Source) ([]Node, error) {
 	tokens, err := lexTemplate(src.Text)
 	if err != nil {
 		return nil, err
 	}
 
-	parts := make([]Part, 0, len(tokens))
-	for _, tok := range tokens {
-		switch tok.kind {
-		case tokenText:
-			parts = append(parts, Part{Text: tok.value})
-		case tokenExpr:
-			parts = append(parts, Part{Expr: tok.value})
-		}
+	pos := 0
+	nodes, stop, err := parseNodes(tokens, &pos, nil)
+	if err != nil {
+		return nil, err
 	}
-
-	return parts, nil
+	if stop != "" {
+		return nil, fmt.Errorf("unexpected control terminator %q", stop)
+	}
+	return nodes, nil
 }
 
 func ParseDocument(src source.Source) (*model.CompiledDocument, error) {
@@ -95,4 +122,79 @@ func ParseDocument(src source.Source) (*model.CompiledDocument, error) {
 	}
 
 	return doc, nil
+}
+
+func parseNodes(tokens []token, pos *int, stop map[string]bool) ([]Node, string, error) {
+	nodes := make([]Node, 0)
+
+	for *pos < len(tokens) {
+		tok := tokens[*pos]
+		*pos++
+
+		switch tok.kind {
+		case tokenText:
+			nodes = append(nodes, TextNode{Text: tok.value})
+		case tokenExpr:
+			expr := strings.TrimSpace(tok.value)
+			if stop != nil && stop[expr] {
+				return nodes, expr, nil
+			}
+
+			switch {
+			case strings.HasPrefix(expr, "if "):
+				cond := strings.TrimSpace(strings.TrimPrefix(expr, "if "))
+				thenNodes, found, err := parseNodes(tokens, pos, map[string]bool{
+					"else":   true,
+					"end if": true,
+				})
+				if err != nil {
+					return nil, "", err
+				}
+				if found == "" {
+					return nil, "", fmt.Errorf("missing end if")
+				}
+
+				node := IfNode{Cond: cond, Then: thenNodes}
+				if found == "else" {
+					elseNodes, endTok, err := parseNodes(tokens, pos, map[string]bool{
+						"end if": true,
+					})
+					if err != nil {
+						return nil, "", err
+					}
+					if endTok != "end if" {
+						return nil, "", fmt.Errorf("missing end if")
+					}
+					node.Else = elseNodes
+				}
+				nodes = append(nodes, node)
+			case strings.HasPrefix(expr, "each "):
+				body := strings.TrimSpace(strings.TrimPrefix(expr, "each "))
+				before, after, ok := strings.Cut(body, " as ")
+				if !ok {
+					return nil, "", fmt.Errorf("invalid each syntax")
+				}
+				eachNodes, found, err := parseNodes(tokens, pos, map[string]bool{
+					"end each": true,
+				})
+				if err != nil {
+					return nil, "", err
+				}
+				if found != "end each" {
+					return nil, "", fmt.Errorf("missing end each")
+				}
+				nodes = append(nodes, EachNode{
+					Collection: strings.TrimSpace(before),
+					Item:       strings.TrimSpace(after),
+					Body:       eachNodes,
+				})
+			case expr == "else", expr == "end if", expr == "end each":
+				return nil, "", fmt.Errorf("unexpected control terminator %q", expr)
+			default:
+				nodes = append(nodes, ExprNode{Expr: expr})
+			}
+		}
+	}
+
+	return nodes, "", nil
 }

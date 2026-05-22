@@ -1,0 +1,11 @@
+package usecase
+
+type {{ use_case_name }}Input struct {
+}
+
+type {{ receiver_name }}UseCase struct {
+}
+
+func New{{ use_case_name }}UseCase() *{{ receiver_name }}UseCase {
+	return &{{ receiver_name }}UseCase{}
+}
