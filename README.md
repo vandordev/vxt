@@ -12,6 +12,12 @@ It exposes a staged pipeline:
 
 `vxt` is a library package today. It does not ship a CLI or standalone binary.
 
+## Release Status
+
+`vxt` `v0.1.0` is the first public Go package release and should be treated as
+an experimental `v0.x` API. The supported public packages are deliberate, but
+controlled breaking changes may still happen before `v1.0.0`.
+
 ## Install
 
 ```bash
@@ -130,6 +136,9 @@ Current non-goals:
 
 Hooks are surfaced only as planned metadata in document plans. They are not
 executed by `vxt` in `v0.1`.
+
+See [docs/releases/v0.1.0.md](docs/releases/v0.1.0.md) for the curated release
+scope and verification checklist.
 
 ## License and Trademark
 
