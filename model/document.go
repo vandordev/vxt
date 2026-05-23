@@ -7,10 +7,35 @@ type InputDecl struct {
 	TypeName string
 }
 
+type TypeFieldDecl struct {
+	Name     string
+	TypeName string
+	Optional bool
+	Array    bool
+}
+
+type TypeDecl struct {
+	Name   string
+	Fields []TypeFieldDecl
+}
+
 type FileBlock struct {
 	Path string
 	Body string
 	Mode string
+}
+
+type DirBlock struct {
+	Path string
+}
+
+type PartialDecl struct {
+	Name string
+	Body string
+}
+
+type UseDecl struct {
+	Path string
 }
 
 type HookDecl struct {
@@ -22,7 +47,11 @@ type HookDecl struct {
 type CompiledDocument struct {
 	Source   source.Source
 	Template string
+	Types    []TypeDecl
 	Inputs   []InputDecl
+	Dirs     []DirBlock
+	Partials []PartialDecl
+	Uses     []UseDecl
 	Files    []FileBlock
 	Hooks    []HookDecl
 }

@@ -7,11 +7,20 @@ import (
 	"github.com/alfariiizi/vxt/diag"
 	"github.com/alfariiizi/vxt/expr"
 	"github.com/alfariiizi/vxt/model"
+	"github.com/alfariiizi/vxt/source"
 	"github.com/alfariiizi/vxt/syntax"
 )
 
 func RenderSingle(tpl *model.CompiledTemplate, ctx map[string]any) (string, []diag.Diagnostic) {
-	nodes, err := syntax.ParseTemplate(tpl.Source)
+	return RenderTemplateSource(tpl.Source, ctx)
+}
+
+func RenderTemplateSource(src source.Source, ctx map[string]any) (string, []diag.Diagnostic) {
+	return renderTemplateSourceWithPartials(src, ctx, nil)
+}
+
+func renderTemplateSourceWithPartials(src source.Source, ctx map[string]any, partials map[string]string) (string, []diag.Diagnostic) {
+	nodes, err := syntax.ParseTemplate(src)
 	if err != nil {
 		return "", []diag.Diagnostic{{
 			Code:     diag.CodeParseUnexpectedEOF,
@@ -20,10 +29,10 @@ func RenderSingle(tpl *model.CompiledTemplate, ctx map[string]any) (string, []di
 		}}
 	}
 
-	return renderNodes(nodes, ctx)
+	return renderNodes(nodes, ctx, partials)
 }
 
-func renderNodes(nodes []syntax.Node, ctx map[string]any) (string, []diag.Diagnostic) {
+func renderNodes(nodes []syntax.Node, ctx map[string]any, partials map[string]string) (string, []diag.Diagnostic) {
 	var out strings.Builder
 	for _, rawNode := range nodes {
 		switch node := rawNode.(type) {
@@ -54,7 +63,7 @@ func renderNodes(nodes []syntax.Node, ctx map[string]any) (string, []diag.Diagno
 			} else {
 				branch = node.Else
 			}
-			rendered, diags := renderNodes(branch, ctx)
+			rendered, diags := renderNodes(branch, ctx, partials)
 			if len(diags) > 0 {
 				return "", diags
 			}
@@ -79,12 +88,36 @@ func renderNodes(nodes []syntax.Node, ctx map[string]any) (string, []diag.Diagno
 			for i := 0; i < rv.Len(); i++ {
 				childCtx := cloneContext(ctx)
 				childCtx[node.Item] = rv.Index(i).Interface()
-				rendered, diags := renderNodes(node.Body, childCtx)
+				rendered, diags := renderNodes(node.Body, childCtx, partials)
 				if len(diags) > 0 {
 					return "", diags
 				}
 				out.WriteString(rendered)
 			}
+		case syntax.IncludeNode:
+			if partials == nil {
+				return "", []diag.Diagnostic{{
+					Code:     diag.CodeRenderMissingValue,
+					Severity: diag.SeverityError,
+					Message:  "missing partial for include " + node.Target,
+				}}
+			}
+			body, ok := partials[node.Target]
+			if !ok {
+				return "", []diag.Diagnostic{{
+					Code:     diag.CodeRenderMissingValue,
+					Severity: diag.SeverityError,
+					Message:  "missing partial for include " + node.Target,
+				}}
+			}
+			rendered, diags := renderTemplateSourceWithPartials(source.Source{
+				ID:   node.Target,
+				Text: body,
+			}, ctx, partials)
+			if len(diags) > 0 {
+				return "", diags
+			}
+			out.WriteString(rendered)
 		}
 	}
 

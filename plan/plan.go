@@ -1,5 +1,9 @@
 package plan
 
+type DirOutput struct {
+	Path string
+}
+
 type FileOutput struct {
 	Path    string
 	Content string
@@ -12,6 +16,7 @@ type PlannedHook struct {
 }
 
 type Plan struct {
+	Dirs         []DirOutput
 	Files        []FileOutput
 	PlannedHooks []PlannedHook
 }

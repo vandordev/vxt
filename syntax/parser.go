@@ -40,10 +40,15 @@ type EachNode struct {
 	Body       []Node
 }
 
-func (TextNode) isNode() {}
-func (ExprNode) isNode() {}
-func (IfNode) isNode()   {}
-func (EachNode) isNode() {}
+type IncludeNode struct {
+	Target string
+}
+
+func (TextNode) isNode()    {}
+func (ExprNode) isNode()    {}
+func (IfNode) isNode()      {}
+func (EachNode) isNode()    {}
+func (IncludeNode) isNode() {}
 
 func ParseTemplate(src source.Source) ([]Node, error) {
 	tokens, err := lexTemplate(src.Text)
@@ -63,6 +68,14 @@ func ParseTemplate(src source.Source) ([]Node, error) {
 }
 
 func ParseDocument(src source.Source) (*model.CompiledDocument, error) {
+	return parseDocument(src, true)
+}
+
+func ParseDefinitionDocument(src source.Source) (*model.CompiledDocument, error) {
+	return parseDocument(src, false)
+}
+
+func parseDocument(src source.Source, requireTemplate bool) (*model.CompiledDocument, error) {
 	lines := strings.Split(src.Text, "\n")
 	doc := &model.CompiledDocument{Source: src}
 
@@ -75,6 +88,16 @@ func ParseDocument(src source.Source) (*model.CompiledDocument, error) {
 		switch {
 		case strings.HasPrefix(line, "@template "):
 			doc.Template = strings.TrimSpace(strings.TrimPrefix(line, "@template "))
+		case strings.HasPrefix(line, "@use "):
+			path := strings.Trim(strings.TrimSpace(strings.TrimPrefix(line, "@use ")), `"`)
+			doc.Uses = append(doc.Uses, model.UseDecl{Path: path})
+		case strings.HasPrefix(line, "@type "):
+			typeDecl, next, err := parseTypeDecl(lines, i)
+			if err != nil {
+				return nil, err
+			}
+			doc.Types = append(doc.Types, typeDecl)
+			i = next
 		case strings.HasPrefix(line, "@input "):
 			parts := strings.Fields(strings.TrimPrefix(line, "@input "))
 			if len(parts) != 2 {
@@ -83,6 +106,28 @@ func ParseDocument(src source.Source) (*model.CompiledDocument, error) {
 			doc.Inputs = append(doc.Inputs, model.InputDecl{
 				Name:     parts[0],
 				TypeName: parts[1],
+			})
+		case strings.HasPrefix(line, "@dir "):
+			path := strings.Trim(strings.TrimSpace(strings.TrimPrefix(line, "@dir ")), `"`)
+			doc.Dirs = append(doc.Dirs, model.DirBlock{Path: path})
+		case strings.HasPrefix(line, "@partial "):
+			name := strings.TrimSpace(strings.TrimPrefix(line, "@partial "))
+			var bodyLines []string
+			foundEnd := false
+			for j := i + 1; j < len(lines); j++ {
+				if strings.TrimSpace(lines[j]) == "@endpartial" {
+					i = j
+					foundEnd = true
+					break
+				}
+				bodyLines = append(bodyLines, lines[j])
+			}
+			if !foundEnd {
+				return nil, errUnexpectedEOF
+			}
+			doc.Partials = append(doc.Partials, model.PartialDecl{
+				Name: name,
+				Body: strings.Join(bodyLines, "\n"),
 			})
 		case strings.HasPrefix(line, "@hook "):
 			payload := strings.TrimSpace(strings.TrimPrefix(line, "@hook "))
@@ -117,11 +162,68 @@ func ParseDocument(src source.Source) (*model.CompiledDocument, error) {
 		}
 	}
 
-	if doc.Template == "" {
+	if requireTemplate && doc.Template == "" {
 		return nil, fmt.Errorf("missing @template")
 	}
 
 	return doc, nil
+}
+
+func parseTypeDecl(lines []string, start int) (model.TypeDecl, int, error) {
+	line := strings.TrimSpace(lines[start])
+	header := strings.TrimSpace(strings.TrimPrefix(line, "@type "))
+	if !strings.HasSuffix(header, "{") {
+		return model.TypeDecl{}, start, fmt.Errorf("invalid type declaration")
+	}
+
+	name := strings.TrimSpace(strings.TrimSuffix(header, "{"))
+	if name == "" {
+		return model.TypeDecl{}, start, fmt.Errorf("invalid type declaration")
+	}
+
+	typeDecl := model.TypeDecl{Name: name}
+	for i := start + 1; i < len(lines); i++ {
+		raw := strings.TrimSpace(lines[i])
+		if raw == "" {
+			continue
+		}
+		if raw == "}" {
+			return typeDecl, i, nil
+		}
+
+		field, err := parseTypeField(raw)
+		if err != nil {
+			return model.TypeDecl{}, start, err
+		}
+		typeDecl.Fields = append(typeDecl.Fields, field)
+	}
+
+	return model.TypeDecl{}, start, errUnexpectedEOF
+}
+
+func parseTypeField(line string) (model.TypeFieldDecl, error) {
+	namePart, typePart, ok := strings.Cut(line, ":")
+	if !ok {
+		return model.TypeFieldDecl{}, fmt.Errorf("invalid type field")
+	}
+
+	field := model.TypeFieldDecl{
+		Name: strings.TrimSpace(namePart),
+	}
+	if strings.HasSuffix(field.Name, "?") {
+		field.Optional = true
+		field.Name = strings.TrimSuffix(field.Name, "?")
+	}
+	field.TypeName = strings.TrimSpace(typePart)
+	if strings.HasSuffix(field.TypeName, "[]") {
+		field.Array = true
+		field.TypeName = strings.TrimSuffix(field.TypeName, "[]")
+	}
+	if field.Name == "" || field.TypeName == "" {
+		return model.TypeFieldDecl{}, fmt.Errorf("invalid type field")
+	}
+
+	return field, nil
 }
 
 func parseNodes(tokens []token, pos *int, stop map[string]bool) ([]Node, string, error) {
@@ -188,6 +290,12 @@ func parseNodes(tokens []token, pos *int, stop map[string]bool) ([]Node, string,
 					Item:       strings.TrimSpace(after),
 					Body:       eachNodes,
 				})
+			case strings.HasPrefix(expr, "include "):
+				target := strings.TrimSpace(strings.TrimPrefix(expr, "include "))
+				if target == "" {
+					return nil, "", fmt.Errorf("invalid include syntax")
+				}
+				nodes = append(nodes, IncludeNode{Target: target})
 			case expr == "else", expr == "end if", expr == "end each":
 				return nil, "", fmt.Errorf("unexpected control terminator %q", expr)
 			default:

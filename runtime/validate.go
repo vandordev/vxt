@@ -31,7 +31,7 @@ func ValidateDocument(doc *model.CompiledDocument, input map[string]any) Validat
 			continue
 		}
 
-		if err := schema.ValidateValue(decl.TypeName, value); err != nil {
+		if err := schema.ValidateValueAgainstTypes(decl.TypeName, value, doc.Types); err != nil {
 			result.Diagnostics = append(result.Diagnostics, diag.Diagnostic{
 				Code:     diag.CodeTypeMismatch,
 				Severity: diag.SeverityError,

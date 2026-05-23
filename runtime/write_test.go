@@ -1,6 +1,7 @@
 package runtime_test
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -53,5 +54,29 @@ func TestWritePlanToFilesystemTarget(t *testing.T) {
 
 	if _, err := filepath.Abs(filepath.Join(root, "nested", "hello.txt")); err != nil {
 		t.Fatalf("expected written path to resolve: %v", err)
+	}
+}
+
+func TestWritePlanCreatesDirectoriesOnFilesystemTarget(t *testing.T) {
+	root := t.TempDir()
+	p := plan.Plan{
+		Dirs: []plan.DirOutput{{Path: "nested/modules"}},
+	}
+
+	target := write.NewFilesystemTarget(root)
+	report, err := runtime.WritePlan(p, target)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if report.DirsWritten != 1 {
+		t.Fatalf("got %d dirs written", report.DirsWritten)
+	}
+
+	info, err := os.Stat(filepath.Join(root, "nested", "modules"))
+	if err != nil {
+		t.Fatalf("expected dir to exist: %v", err)
+	}
+	if !info.IsDir() {
+		t.Fatal("expected created path to be dir")
 	}
 }

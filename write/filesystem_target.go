@@ -15,6 +15,16 @@ func NewFilesystemTarget(root string) *FilesystemTarget {
 	return &FilesystemTarget{root: root}
 }
 
+func (f *FilesystemTarget) MkdirAll(path string) error {
+	cleaned := filepath.Clean(path)
+	if cleaned == ".." || strings.HasPrefix(cleaned, "../") || filepath.IsAbs(cleaned) {
+		return fmt.Errorf("path %q escapes output root", path)
+	}
+
+	fullPath := filepath.Join(f.root, cleaned)
+	return os.MkdirAll(fullPath, 0o755)
+}
+
 func (f *FilesystemTarget) WriteFile(path string, content []byte) error {
 	cleaned := filepath.Clean(path)
 	if cleaned == ".." || strings.HasPrefix(cleaned, "../") || filepath.IsAbs(cleaned) {
