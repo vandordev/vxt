@@ -1,24 +1,126 @@
 # vxt
 
-`vxt` is an independent product under the Vandor organization.
+`vxt` is a spec-first Go library for code and file generation under the Vandor
+organization.
 
-It is a spec-first template compiler/runtime product for code and file
-generation. The canonical public model is a staged pipeline:
+It exposes a staged pipeline:
 
 1. compile
 2. validate
 3. plan
 4. write
 
-For v0.1, `vxt` should prove:
+`vxt` is a library package today. It does not ship a CLI or standalone binary.
 
-- single-file rendering through a simple convenience API
+## Install
+
+```bash
+go get github.com/vandordev/vxt
+```
+
+## Stable Public Packages
+
+The intended public contract for `v0.1` is limited to:
+
+- `github.com/vandordev/vxt`
+- `github.com/vandordev/vxt/runtime`
+- `github.com/vandordev/vxt/diag`
+- `github.com/vandordev/vxt/source`
+- `github.com/vandordev/vxt/write`
+
+Implementation packages under `internal/` are not public API and may change
+without notice.
+
+## Quick Start
+
+### Single-file rendering
+
+```go
+package main
+
+import (
+	"fmt"
+	
+	"github.com/vandordev/vxt"
+	"github.com/vandordev/vxt/source"
+)
+
+func main() {
+	out, diags := vxt.RenderSingleFile(source.Source{
+		ID:   "hello.vxt",
+		Text: "Hello {{ name }}",
+	}, map[string]any{
+		"name": "Vandor",
+	})
+	if len(diags) > 0 {
+		panic(diags[0].Message)
+	}
+
+	fmt.Println(out)
+}
+```
+
+### Document pipeline
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/vandordev/vxt/runtime"
+	"github.com/vandordev/vxt/source"
+	"github.com/vandordev/vxt/write"
+)
+
+func main() {
+	src := source.Source{
+		ID: "hello-doc.vxt",
+		Text: "@template hello\n" +
+			"@input name string\n" +
+			"@file \"hello.txt\"\n" +
+			"Hello {{ name }}\n" +
+			"@endfile\n",
+	}
+
+	compiled := runtime.CompileDocument(src)
+	if len(compiled.Diagnostics) > 0 {
+		panic(compiled.Diagnostics[0].Message)
+	}
+
+	validated := runtime.ValidateDocument(compiled.Document, map[string]any{
+		"name": "Vandor",
+	})
+	if len(validated.Diagnostics) > 0 {
+		panic(validated.Diagnostics[0].Message)
+	}
+
+	planned := runtime.PlanDocument(validated)
+	if len(planned.Diagnostics) > 0 {
+		panic(planned.Diagnostics[0].Message)
+	}
+
+	target := write.NewMemoryTarget()
+	report, err := runtime.WritePlan(planned.Plan, target)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(report.FilesWritten)
+}
+```
+
+## v0.1 Scope
+
+The current `v0.1` target is intentionally narrow:
+
+- single-file rendering through a convenience API
 - document-mode compile, validate, plan, and write
 - typed document input validation
 - structured diagnostics
-- output-target abstraction with filesystem as one adapter
+- output-target abstraction with filesystem and memory adapters
 
-Explicit v0.1 non-goals:
+Current non-goals:
 
 - hook execution
 - trust policy
@@ -26,34 +128,13 @@ Explicit v0.1 non-goals:
 - CLI behavior
 - AST manipulation as a public contract
 
-## Public Concepts
+Hooks are surfaced only as planned metadata in document plans. They are not
+executed by `vxt` in `v0.1`.
 
-The current public model revolves around:
+## License and Trademark
 
-- `source.Source`
-- `runtime.CompileResult`
-- `model.CompiledTemplate`
-- `model.CompiledDocument`
-- `runtime.ValidationResult`
-- `plan.Plan`
-- `diag.Diagnostic`
-- `write.OutputTarget`
+The source code in this repository is licensed under `AGPL-3.0`. See
+[LICENSE](LICENSE).
 
-## Current v0.1 Surface
-
-Implemented now:
-
-- `vxt.RenderSingleFile(...)`
-- `runtime.CompileSingle(...)`
-- `runtime.CompileDocument(...)`
-- `runtime.ValidateDocument(...)`
-- `runtime.PlanDocument(...)`
-- `runtime.WritePlan(...)`
-
-Output targets:
-
-- memory target
-- filesystem target
-
-Hooks are exposed only as planned metadata in document plans. They are not
-executed by `vxt` in v0.1.
+`Vandor` name and brand assets are not licensed under the AGPL. See
+[TRADEMARK.md](TRADEMARK.md).
