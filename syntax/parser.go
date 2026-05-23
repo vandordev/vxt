@@ -201,7 +201,10 @@ func parseConditionalBlock(lines []string, start int) (model.ConditionalBlock, i
 
 func parseFileBlock(lines []string, start int) (model.FileBlock, int, error) {
 	line := strings.TrimSpace(lines[start])
-	path := strings.Trim(strings.TrimSpace(strings.TrimPrefix(line, "@file ")), `"`)
+	path, mode, err := parseFileHeader(strings.TrimSpace(strings.TrimPrefix(line, "@file ")))
+	if err != nil {
+		return model.FileBlock{}, start, err
+	}
 	var bodyLines []string
 	foundEnd := false
 	for j := start + 1; j < len(lines); j++ {
@@ -210,7 +213,7 @@ func parseFileBlock(lines []string, start int) (model.FileBlock, int, error) {
 			return model.FileBlock{
 				Path: path,
 				Body: strings.Join(bodyLines, "\n"),
-				Mode: "create",
+				Mode: mode,
 			}, j, nil
 		}
 		bodyLines = append(bodyLines, lines[j])
@@ -219,6 +222,32 @@ func parseFileBlock(lines []string, start int) (model.FileBlock, int, error) {
 		return model.FileBlock{}, start, errUnexpectedEOF
 	}
 	return model.FileBlock{}, start, errUnexpectedEOF
+}
+
+func parseFileHeader(header string) (string, string, error) {
+	if !strings.HasPrefix(header, `"`) {
+		return "", "", fmt.Errorf("invalid file declaration")
+	}
+
+	rest := strings.TrimPrefix(header, `"`)
+	endQuote := strings.Index(rest, `"`)
+	if endQuote < 0 {
+		return "", "", fmt.Errorf("invalid file declaration")
+	}
+
+	path := rest[:endQuote]
+	mode := "create"
+	for _, attr := range strings.Fields(strings.TrimSpace(rest[endQuote+1:])) {
+		key, value, ok := strings.Cut(attr, "=")
+		if !ok {
+			return "", "", fmt.Errorf("invalid file attribute")
+		}
+		if key == "mode" {
+			mode = value
+		}
+	}
+
+	return path, mode, nil
 }
 
 func parseTypeDecl(lines []string, start int) (model.TypeDecl, int, error) {

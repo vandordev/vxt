@@ -50,6 +50,31 @@ func TestPlanDocumentReturnsDirectoryArtifacts(t *testing.T) {
 	}
 }
 
+func TestPlanDocumentRendersFilePathsFromInput(t *testing.T) {
+	src := source.Source{
+		ID: "plan-file-path-doc.vxt",
+		Text: "@template hello\n" +
+			"@input entity_name string\n" +
+			"@file \"src/{{ entity_name }}.txt\"\n" +
+			"Hello\n" +
+			"@endfile\n",
+	}
+
+	compiled := runtime.CompileDocument(src)
+	validated := runtime.ValidateDocument(compiled.Document, map[string]any{"entity_name": "booking"})
+	result := runtime.PlanDocument(validated)
+
+	if len(result.Diagnostics) != 0 {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+	if len(result.Plan.Files) != 1 {
+		t.Fatalf("got %d files", len(result.Plan.Files))
+	}
+	if result.Plan.Files[0].Path != "src/booking.txt" {
+		t.Fatalf("got file path %q", result.Plan.Files[0].Path)
+	}
+}
+
 func TestPlanDocumentRendersLocalPartialIncludes(t *testing.T) {
 	src := source.Source{
 		ID: "plan-partial-doc.vxt",
@@ -75,6 +100,31 @@ func TestPlanDocumentRendersLocalPartialIncludes(t *testing.T) {
 	}
 	if result.Plan.Files[0].Content != "import \"context\"\npackage demo" {
 		t.Fatalf("got content %q", result.Plan.Files[0].Content)
+	}
+}
+
+func TestPlanDocumentRejectsDuplicateRenderedFilePaths(t *testing.T) {
+	src := source.Source{
+		ID: "plan-duplicate-file-path-doc.vxt",
+		Text: "@template hello\n" +
+			"@input entity_name string\n" +
+			"@file \"src/{{ entity_name }}.txt\"\n" +
+			"Hello\n" +
+			"@endfile\n" +
+			"@file \"src/booking.txt\"\n" +
+			"World\n" +
+			"@endfile\n",
+	}
+
+	compiled := runtime.CompileDocument(src)
+	validated := runtime.ValidateDocument(compiled.Document, map[string]any{"entity_name": "booking"})
+	result := runtime.PlanDocument(validated)
+
+	if len(result.Diagnostics) == 0 {
+		t.Fatal("expected duplicate output diagnostic")
+	}
+	if result.Diagnostics[0].Code != "VXT_OUTPUT_CONFLICT" {
+		t.Fatalf("got diagnostic code %q", result.Diagnostics[0].Code)
 	}
 }
 

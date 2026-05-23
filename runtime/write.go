@@ -14,10 +14,15 @@ func WritePlan(p planpkg.Plan, target write.OutputTarget) (write.WriteReport, er
 		report.DirsWritten++
 	}
 	for _, file := range p.Files {
-		if err := target.WriteFile(file.Path, []byte(file.Content)); err != nil {
+		written, err := target.WriteFile(file.Path, []byte(file.Content), file.Mode)
+		if err != nil {
 			return report, err
 		}
-		report.FilesWritten++
+		if written {
+			report.FilesWritten++
+			continue
+		}
+		report.FilesSkipped++
 	}
 	return report, nil
 }

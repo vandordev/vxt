@@ -17,11 +17,22 @@ func (m *MemoryTarget) MkdirAll(path string) error {
 	return nil
 }
 
-func (m *MemoryTarget) WriteFile(path string, content []byte) error {
+func (m *MemoryTarget) WriteFile(path string, content []byte, mode string) (bool, error) {
+	if mode == "skip-if-exists" {
+		if _, exists := m.files[path]; exists {
+			return false, nil
+		}
+	}
+	if mode == "create" {
+		if _, exists := m.files[path]; exists {
+			return false, ErrFileExists{Path: path}
+		}
+	}
+
 	copied := make([]byte, len(content))
 	copy(copied, content)
 	m.files[path] = copied
-	return nil
+	return true, nil
 }
 
 func (m *MemoryTarget) Files() map[string][]byte {

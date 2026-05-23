@@ -21,6 +21,7 @@ func PlanDocument(validated ValidationResult) PlanResult {
 	}
 
 	partials := make(map[string]string, len(validated.Document.Partials))
+	plannedFilePaths := map[string]struct{}{}
 	for _, partial := range validated.Document.Partials {
 		partials[partial.Name] = partial.Body
 	}
@@ -38,6 +39,19 @@ func PlanDocument(validated ValidationResult) PlanResult {
 	}
 
 	for _, file := range validated.Document.Files {
+		path, diags := render.RenderTemplateSource(source.Source{
+			ID:   file.Path,
+			Text: file.Path,
+		}, validated.Input)
+		if len(diags) > 0 {
+			result.Diagnostics = append(result.Diagnostics, diags...)
+			return result
+		}
+		if conflictDiag, ok := duplicateFilePathDiagnostic(path, plannedFilePaths); ok {
+			result.Diagnostics = append(result.Diagnostics, conflictDiag)
+			return result
+		}
+
 		content, diags := render.RenderDocumentBodyWithPartials(file, validated.Input, partials)
 		if len(diags) > 0 {
 			result.Diagnostics = append(result.Diagnostics, diags...)
@@ -45,7 +59,7 @@ func PlanDocument(validated ValidationResult) PlanResult {
 		}
 
 		result.Plan.Files = append(result.Plan.Files, planpkg.FileOutput{
-			Path:    file.Path,
+			Path:    path,
 			Content: content,
 			Mode:    file.Mode,
 		})
@@ -78,6 +92,19 @@ func PlanDocument(validated ValidationResult) PlanResult {
 		}
 
 		for _, file := range conditional.Files {
+			path, diags := render.RenderTemplateSource(source.Source{
+				ID:   file.Path,
+				Text: file.Path,
+			}, validated.Input)
+			if len(diags) > 0 {
+				result.Diagnostics = append(result.Diagnostics, diags...)
+				return result
+			}
+			if conflictDiag, ok := duplicateFilePathDiagnostic(path, plannedFilePaths); ok {
+				result.Diagnostics = append(result.Diagnostics, conflictDiag)
+				return result
+			}
+
 			content, diags := render.RenderDocumentBodyWithPartials(file, validated.Input, partials)
 			if len(diags) > 0 {
 				result.Diagnostics = append(result.Diagnostics, diags...)
@@ -85,7 +112,7 @@ func PlanDocument(validated ValidationResult) PlanResult {
 			}
 
 			result.Plan.Files = append(result.Plan.Files, planpkg.FileOutput{
-				Path:    file.Path,
+				Path:    path,
 				Content: content,
 				Mode:    file.Mode,
 			})
@@ -97,4 +124,17 @@ func PlanDocument(validated ValidationResult) PlanResult {
 	}
 
 	return result
+}
+
+func duplicateFilePathDiagnostic(path string, seen map[string]struct{}) (diag.Diagnostic, bool) {
+	if _, exists := seen[path]; exists {
+		return diag.Diagnostic{
+			Code:     diag.CodeOutputConflict,
+			Severity: diag.SeverityError,
+			Message:  "duplicate file output path: " + path,
+		}, true
+	}
+
+	seen[path] = struct{}{}
+	return diag.Diagnostic{}, false
 }

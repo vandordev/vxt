@@ -181,3 +181,25 @@ func TestCompileDocumentParsesConditionalDirectoryBlocks(t *testing.T) {
 		t.Fatalf("got dir path %q", result.Document.Conditionals[0].Dirs[0].Path)
 	}
 }
+
+func TestCompileDocumentParsesFileModeAttribute(t *testing.T) {
+	src := source.Source{
+		ID: "file-mode-doc.vxt",
+		Text: "@template demo\n" +
+			"@file \"hello.txt\" mode=overwrite\n" +
+			"hello\n" +
+			"@endfile\n",
+	}
+
+	result := runtime.CompileDocument(src)
+
+	if result.Document == nil {
+		t.Fatal("expected compiled document")
+	}
+	if len(result.Document.Files) != 1 {
+		t.Fatalf("got %d files", len(result.Document.Files))
+	}
+	if result.Document.Files[0].Mode != "overwrite" {
+		t.Fatalf("got mode %q", result.Document.Files[0].Mode)
+	}
+}

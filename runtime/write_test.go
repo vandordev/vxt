@@ -80,3 +80,79 @@ func TestWritePlanCreatesDirectoriesOnFilesystemTarget(t *testing.T) {
 		t.Fatal("expected created path to be dir")
 	}
 }
+
+func TestWritePlanCreateModeFailsWhenFileExists(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "hello.txt")
+	if err := os.WriteFile(path, []byte("existing"), 0o644); err != nil {
+		t.Fatalf("seed existing file: %v", err)
+	}
+
+	p := plan.Plan{
+		Files: []plan.FileOutput{{Path: "hello.txt", Content: "new", Mode: "create"}},
+	}
+
+	target := write.NewFilesystemTarget(root)
+	_, err := runtime.WritePlan(p, target)
+	if err == nil {
+		t.Fatal("expected create mode error for existing file")
+	}
+}
+
+func TestWritePlanOverwriteModeReplacesExistingFile(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "hello.txt")
+	if err := os.WriteFile(path, []byte("existing"), 0o644); err != nil {
+		t.Fatalf("seed existing file: %v", err)
+	}
+
+	p := plan.Plan{
+		Files: []plan.FileOutput{{Path: "hello.txt", Content: "new", Mode: "overwrite"}},
+	}
+
+	target := write.NewFilesystemTarget(root)
+	_, err := runtime.WritePlan(p, target)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	content, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read file: %v", err)
+	}
+	if string(content) != "new" {
+		t.Fatalf("got content %q", string(content))
+	}
+}
+
+func TestWritePlanSkipIfExistsModeKeepsExistingFile(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "hello.txt")
+	if err := os.WriteFile(path, []byte("existing"), 0o644); err != nil {
+		t.Fatalf("seed existing file: %v", err)
+	}
+
+	p := plan.Plan{
+		Files: []plan.FileOutput{{Path: "hello.txt", Content: "new", Mode: "skip-if-exists"}},
+	}
+
+	target := write.NewFilesystemTarget(root)
+	report, err := runtime.WritePlan(p, target)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if report.FilesWritten != 0 {
+		t.Fatalf("got %d files written", report.FilesWritten)
+	}
+	if report.FilesSkipped != 1 {
+		t.Fatalf("got %d files skipped", report.FilesSkipped)
+	}
+
+	content, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read file: %v", err)
+	}
+	if string(content) != "existing" {
+		t.Fatalf("got content %q", string(content))
+	}
+}

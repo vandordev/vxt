@@ -12,9 +12,12 @@ func TestFilesystemTargetWritesInsideTempDir(t *testing.T) {
 	dir := t.TempDir()
 	target := write.NewFilesystemTarget(dir)
 
-	err := target.WriteFile("hello.txt", []byte("Hello"))
+	written, err := target.WriteFile("hello.txt", []byte("Hello"), "create")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
+	}
+	if !written {
+		t.Fatal("expected file to be written")
 	}
 
 	data, err := os.ReadFile(filepath.Join(dir, "hello.txt"))
