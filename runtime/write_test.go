@@ -156,3 +156,63 @@ func TestWritePlanSkipIfExistsModeKeepsExistingFile(t *testing.T) {
 		t.Fatalf("got content %q", string(content))
 	}
 }
+
+func TestWritePlanWithDiagnosticsReturnsFileExistsDiagnostic(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "hello.txt")
+	if err := os.WriteFile(path, []byte("existing"), 0o644); err != nil {
+		t.Fatalf("seed existing file: %v", err)
+	}
+
+	p := plan.Plan{
+		Files: []plan.FileOutput{{Path: "hello.txt", Content: "new", Mode: "create"}},
+	}
+
+	target := write.NewFilesystemTarget(root)
+	result := runtime.WritePlanWithDiagnostics(p, target)
+	if result.Err == nil {
+		t.Fatal("expected write error")
+	}
+	if len(result.Diagnostics) != 1 {
+		t.Fatalf("got %d diagnostics", len(result.Diagnostics))
+	}
+	if result.Diagnostics[0].Code != "VXT_WRITE_FILE_EXISTS" {
+		t.Fatalf("got diagnostic code %q", result.Diagnostics[0].Code)
+	}
+}
+
+func TestWritePlanWithDiagnosticsReturnsPathEscapeDiagnostic(t *testing.T) {
+	p := plan.Plan{
+		Files: []plan.FileOutput{{Path: "../escape.txt", Content: "nope", Mode: "create"}},
+	}
+
+	target := write.NewFilesystemTarget(t.TempDir())
+	result := runtime.WritePlanWithDiagnostics(p, target)
+	if result.Err == nil {
+		t.Fatal("expected write error")
+	}
+	if len(result.Diagnostics) != 1 {
+		t.Fatalf("got %d diagnostics", len(result.Diagnostics))
+	}
+	if result.Diagnostics[0].Code != "VXT_WRITE_PATH_ESCAPE" {
+		t.Fatalf("got diagnostic code %q", result.Diagnostics[0].Code)
+	}
+}
+
+func TestWritePlanWithDiagnosticsReturnsUnsupportedWriteModeDiagnostic(t *testing.T) {
+	p := plan.Plan{
+		Files: []plan.FileOutput{{Path: "hello.txt", Content: "nope", Mode: "merge"}},
+	}
+
+	target := write.NewMemoryTarget()
+	result := runtime.WritePlanWithDiagnostics(p, target)
+	if result.Err == nil {
+		t.Fatal("expected write error")
+	}
+	if len(result.Diagnostics) != 1 {
+		t.Fatalf("got %d diagnostics", len(result.Diagnostics))
+	}
+	if result.Diagnostics[0].Code != "VXT_WRITE_UNSUPPORTED_MODE" {
+		t.Fatalf("got diagnostic code %q", result.Diagnostics[0].Code)
+	}
+}

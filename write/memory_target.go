@@ -18,15 +18,18 @@ func (m *MemoryTarget) MkdirAll(path string) error {
 }
 
 func (m *MemoryTarget) WriteFile(path string, content []byte, mode string) (bool, error) {
-	if mode == "skip-if-exists" {
+	switch mode {
+	case "", "overwrite":
+	case "skip-if-exists":
 		if _, exists := m.files[path]; exists {
 			return false, nil
 		}
-	}
-	if mode == "create" {
+	case "create":
 		if _, exists := m.files[path]; exists {
 			return false, ErrFileExists{Path: path}
 		}
+	default:
+		return false, ErrUnsupportedWriteMode{Mode: mode}
 	}
 
 	copied := make([]byte, len(content))

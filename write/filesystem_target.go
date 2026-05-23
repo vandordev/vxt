@@ -15,6 +15,22 @@ func (e ErrFileExists) Error() string {
 	return fmt.Sprintf("file %q already exists", e.Path)
 }
 
+type ErrPathEscape struct {
+	Path string
+}
+
+func (e ErrPathEscape) Error() string {
+	return fmt.Sprintf("path %q escapes output root", e.Path)
+}
+
+type ErrUnsupportedWriteMode struct {
+	Mode string
+}
+
+func (e ErrUnsupportedWriteMode) Error() string {
+	return fmt.Sprintf("unsupported write mode %q", e.Mode)
+}
+
 type FilesystemTarget struct {
 	root string
 }
@@ -26,7 +42,7 @@ func NewFilesystemTarget(root string) *FilesystemTarget {
 func (f *FilesystemTarget) MkdirAll(path string) error {
 	cleaned := filepath.Clean(path)
 	if cleaned == ".." || strings.HasPrefix(cleaned, "../") || filepath.IsAbs(cleaned) {
-		return fmt.Errorf("path %q escapes output root", path)
+		return ErrPathEscape{Path: path}
 	}
 
 	fullPath := filepath.Join(f.root, cleaned)
@@ -36,7 +52,7 @@ func (f *FilesystemTarget) MkdirAll(path string) error {
 func (f *FilesystemTarget) WriteFile(path string, content []byte, mode string) (bool, error) {
 	cleaned := filepath.Clean(path)
 	if cleaned == ".." || strings.HasPrefix(cleaned, "../") || filepath.IsAbs(cleaned) {
-		return false, fmt.Errorf("path %q escapes output root", path)
+		return false, ErrPathEscape{Path: path}
 	}
 
 	fullPath := filepath.Join(f.root, cleaned)
@@ -64,6 +80,6 @@ func (f *FilesystemTarget) WriteFile(path string, content []byte, mode string) (
 		}
 		return true, os.WriteFile(fullPath, content, 0o644)
 	default:
-		return false, fmt.Errorf("unsupported write mode %q", mode)
+		return false, ErrUnsupportedWriteMode{Mode: mode}
 	}
 }
