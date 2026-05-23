@@ -22,5 +22,5 @@ func RenderSingleFile(src source.Source, ctx map[string]any) (string, []diag.Dia
 		return "", compiled.Diagnostics
 	}
 
-	return render.RenderSingle(compiled.Template, ctx)
+	return render.RenderTemplateSource(compiled.Template.Source, ctx)
 }

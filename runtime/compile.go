@@ -60,7 +60,7 @@ func CompileDocument(src source.Source) CompileResult {
 	doc, err := syntax.ParseDocument(src)
 	if err == nil {
 		return CompileResult{
-			Document: doc,
+			Document: compiledDocumentFromInternal(doc),
 		}
 	}
 
@@ -94,7 +94,7 @@ func CompileDocumentWithResolver(src source.Source, resolver SourceResolver) Com
 		if err != nil {
 			return compileErrorResult(src, err)
 		}
-		result.Document.Types = append(result.Document.Types, imported.Types...)
+		result.Document.Types = append(result.Document.Types, typeDeclsFromInternal(imported.Types)...)
 	}
 
 	return result

@@ -1,51 +1,103 @@
 package runtime
 
-import (
-	internalmodel "github.com/vandordev/vxt/internal/model"
-	internalplan "github.com/vandordev/vxt/internal/plan"
-)
+import "github.com/vandordev/vxt/source"
 
 // InputDecl declares one named document input and its required type.
-type InputDecl = internalmodel.InputDecl
+type InputDecl struct {
+	Name     string
+	TypeName string
+}
 
 // TypeFieldDecl declares one field inside a named document type.
-type TypeFieldDecl = internalmodel.TypeFieldDecl
+type TypeFieldDecl struct {
+	Name     string
+	TypeName string
+	Optional bool
+	Array    bool
+}
 
 // TypeDecl declares one named document input type.
-type TypeDecl = internalmodel.TypeDecl
+type TypeDecl struct {
+	Name   string
+	Fields []TypeFieldDecl
+}
 
 // FileBlock defines one document file artifact before planning.
-type FileBlock = internalmodel.FileBlock
+type FileBlock struct {
+	Path string
+	Body string
+	Mode string
+}
 
 // DirBlock defines one directory artifact before planning.
-type DirBlock = internalmodel.DirBlock
+type DirBlock struct {
+	Path string
+}
 
 // PartialDecl defines one reusable partial body inside a document template.
-type PartialDecl = internalmodel.PartialDecl
+type PartialDecl struct {
+	Name string
+	Body string
+}
 
 // UseDecl references one imported definition document.
-type UseDecl = internalmodel.UseDecl
+type UseDecl struct {
+	Path string
+}
 
 // ConditionalBlock defines one conditional document section.
-type ConditionalBlock = internalmodel.ConditionalBlock
+type ConditionalBlock struct {
+	Condition string
+	Files     []FileBlock
+	Dirs      []DirBlock
+}
 
 // HookDecl records one declared hook in document mode.
-type HookDecl = internalmodel.HookDecl
+type HookDecl struct {
+	Event string
+	Run   string
+}
 
 // CompiledTemplate is the compiled single-file template contract exposed by runtime.
-type CompiledTemplate = internalmodel.CompiledTemplate
+type CompiledTemplate struct {
+	Source source.Source
+}
 
 // CompiledDocument is the compiled document template contract exposed by runtime.
-type CompiledDocument = internalmodel.CompiledDocument
+type CompiledDocument struct {
+	Source       source.Source
+	Template     string
+	Types        []TypeDecl
+	Inputs       []InputDecl
+	Dirs         []DirBlock
+	Partials     []PartialDecl
+	Uses         []UseDecl
+	Conditionals []ConditionalBlock
+	Files        []FileBlock
+	Hooks        []HookDecl
+}
 
 // DirOutput is one planned directory output.
-type DirOutput = internalplan.DirOutput
+type DirOutput struct {
+	Path string
+}
 
 // FileOutput is one planned file output.
-type FileOutput = internalplan.FileOutput
+type FileOutput struct {
+	Path    string
+	Content string
+	Mode    string
+}
 
 // PlannedHook is one hook surfaced as planned metadata.
-type PlannedHook = internalplan.PlannedHook
+type PlannedHook struct {
+	Event string
+	Run   string
+}
 
 // Plan is the public runtime plan contract for document generation.
-type Plan = internalplan.Plan
+type Plan struct {
+	Dirs         []DirOutput
+	Files        []FileOutput
+	PlannedHooks []PlannedHook
+}

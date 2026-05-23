@@ -53,7 +53,7 @@ func PlanDocument(validated ValidationResult) PlanResult {
 			return result
 		}
 
-		content, diags := render.RenderDocumentBodyWithPartials(file, validated.Input, partials)
+		content, diags := render.RenderDocumentBodyWithPartials(fileBlockToInternal(file), validated.Input, partials)
 		if len(diags) > 0 {
 			result.Diagnostics = append(result.Diagnostics, diags...)
 			return result
@@ -106,7 +106,7 @@ func PlanDocument(validated ValidationResult) PlanResult {
 				return result
 			}
 
-			content, diags := render.RenderDocumentBodyWithPartials(file, validated.Input, partials)
+			content, diags := render.RenderDocumentBodyWithPartials(fileBlockToInternal(file), validated.Input, partials)
 			if len(diags) > 0 {
 				result.Diagnostics = append(result.Diagnostics, diags...)
 				return result
