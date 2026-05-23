@@ -3,18 +3,19 @@ package runtime
 import (
 	"fmt"
 
-	"github.com/alfariiizi/vxt/diag"
-	"github.com/alfariiizi/vxt/model"
-	"github.com/alfariiizi/vxt/schema"
+	"github.com/vandordev/vxt/diag"
+	"github.com/vandordev/vxt/internal/schema"
 )
 
+// ValidationResult captures typed input validation for one compiled document.
 type ValidationResult struct {
-	Document    *model.CompiledDocument
+	Document    *CompiledDocument
 	Input       map[string]any
 	Diagnostics []diag.Diagnostic
 }
 
-func ValidateDocument(doc *model.CompiledDocument, input map[string]any) ValidationResult {
+// ValidateDocument checks declared document inputs against the compiled document type declarations.
+func ValidateDocument(doc *CompiledDocument, input map[string]any) ValidationResult {
 	result := ValidationResult{
 		Document: doc,
 		Input:    input,

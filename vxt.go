@@ -9,10 +9,10 @@
 package vxt
 
 import (
-	"github.com/alfariiizi/vxt/diag"
-	"github.com/alfariiizi/vxt/render"
-	"github.com/alfariiizi/vxt/runtime"
-	"github.com/alfariiizi/vxt/source"
+	"github.com/vandordev/vxt/diag"
+	"github.com/vandordev/vxt/internal/render"
+	"github.com/vandordev/vxt/runtime"
+	"github.com/vandordev/vxt/source"
 )
 
 // RenderSingleFile is the convenience API for single-file mode in v0.1.

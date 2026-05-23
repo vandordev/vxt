@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/alfariiizi/vxt/write"
+	"github.com/vandordev/vxt/write"
 )
 
 func TestFilesystemTargetWritesInsideTempDir(t *testing.T) {

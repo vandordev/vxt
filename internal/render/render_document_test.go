@@ -3,8 +3,8 @@ package render_test
 import (
 	"testing"
 
-	"github.com/alfariiizi/vxt/model"
-	"github.com/alfariiizi/vxt/render"
+	"github.com/vandordev/vxt/internal/model"
+	"github.com/vandordev/vxt/internal/render"
 )
 
 func TestRenderDocumentBodyInterpolatesInput(t *testing.T) {

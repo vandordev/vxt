@@ -3,23 +3,25 @@ package runtime
 import (
 	"errors"
 
-	"github.com/alfariiizi/vxt/diag"
-	planpkg "github.com/alfariiizi/vxt/plan"
-	"github.com/alfariiizi/vxt/write"
+	"github.com/vandordev/vxt/diag"
+	"github.com/vandordev/vxt/write"
 )
 
+// WriteResult captures write-stage reporting, diagnostics, and terminal error state.
 type WriteResult struct {
 	Report      write.WriteReport
 	Diagnostics []diag.Diagnostic
 	Err         error
 }
 
-func WritePlan(p planpkg.Plan, target write.OutputTarget) (write.WriteReport, error) {
+// WritePlan writes one plan to an output target and returns the compatibility error surface.
+func WritePlan(p Plan, target write.OutputTarget) (write.WriteReport, error) {
 	result := WritePlanWithDiagnostics(p, target)
 	return result.Report, result.Err
 }
 
-func WritePlanWithDiagnostics(p planpkg.Plan, target write.OutputTarget) WriteResult {
+// WritePlanWithDiagnostics writes one plan and returns structured diagnostics for write failures.
+func WritePlanWithDiagnostics(p Plan, target write.OutputTarget) WriteResult {
 	result := WriteResult{}
 	for _, dir := range p.Dirs {
 		if err := target.MkdirAll(dir.Path); err != nil {

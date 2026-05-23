@@ -1,9 +1,9 @@
 package render
 
 import (
-	"github.com/alfariiizi/vxt/diag"
-	"github.com/alfariiizi/vxt/model"
-	"github.com/alfariiizi/vxt/source"
+	"github.com/vandordev/vxt/diag"
+	"github.com/vandordev/vxt/internal/model"
+	"github.com/vandordev/vxt/source"
 )
 
 func RenderDocumentBody(file model.FileBlock, input map[string]any) (string, []diag.Diagnostic) {

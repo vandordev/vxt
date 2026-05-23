@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/alfariiizi/vxt/model"
+	"github.com/vandordev/vxt/internal/model"
 )
 
 func ValidateValue(typeName string, value any) error {

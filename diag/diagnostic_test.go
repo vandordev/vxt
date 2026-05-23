@@ -3,8 +3,8 @@ package diag_test
 import (
 	"testing"
 
-	"github.com/alfariiizi/vxt/diag"
-	"github.com/alfariiizi/vxt/source"
+	"github.com/vandordev/vxt/diag"
+	"github.com/vandordev/vxt/source"
 )
 
 func TestDiagnosticIncludesCodeSeverityAndSpan(t *testing.T) {

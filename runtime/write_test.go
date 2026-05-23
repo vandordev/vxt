@@ -5,14 +5,13 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/alfariiizi/vxt/plan"
-	"github.com/alfariiizi/vxt/runtime"
-	"github.com/alfariiizi/vxt/write"
+	"github.com/vandordev/vxt/runtime"
+	"github.com/vandordev/vxt/write"
 )
 
 func TestWritePlanToMemoryTarget(t *testing.T) {
-	p := plan.Plan{
-		Files: []plan.FileOutput{{Path: "hello.txt", Content: "Hello Fariz"}},
+	p := runtime.Plan{
+		Files: []runtime.FileOutput{{Path: "hello.txt", Content: "Hello Fariz"}},
 	}
 
 	target := write.NewMemoryTarget()
@@ -26,8 +25,8 @@ func TestWritePlanToMemoryTarget(t *testing.T) {
 }
 
 func TestWritePlanRejectsPathOutsideFilesystemTargetRoot(t *testing.T) {
-	p := plan.Plan{
-		Files: []plan.FileOutput{{Path: "../escape.txt", Content: "nope"}},
+	p := runtime.Plan{
+		Files: []runtime.FileOutput{{Path: "../escape.txt", Content: "nope"}},
 	}
 
 	target := write.NewFilesystemTarget(t.TempDir())
@@ -39,8 +38,8 @@ func TestWritePlanRejectsPathOutsideFilesystemTargetRoot(t *testing.T) {
 
 func TestWritePlanToFilesystemTarget(t *testing.T) {
 	root := t.TempDir()
-	p := plan.Plan{
-		Files: []plan.FileOutput{{Path: "nested/hello.txt", Content: "Hello Fariz"}},
+	p := runtime.Plan{
+		Files: []runtime.FileOutput{{Path: "nested/hello.txt", Content: "Hello Fariz"}},
 	}
 
 	target := write.NewFilesystemTarget(root)
@@ -59,8 +58,8 @@ func TestWritePlanToFilesystemTarget(t *testing.T) {
 
 func TestWritePlanCreatesDirectoriesOnFilesystemTarget(t *testing.T) {
 	root := t.TempDir()
-	p := plan.Plan{
-		Dirs: []plan.DirOutput{{Path: "nested/modules"}},
+	p := runtime.Plan{
+		Dirs: []runtime.DirOutput{{Path: "nested/modules"}},
 	}
 
 	target := write.NewFilesystemTarget(root)
@@ -88,8 +87,8 @@ func TestWritePlanCreateModeFailsWhenFileExists(t *testing.T) {
 		t.Fatalf("seed existing file: %v", err)
 	}
 
-	p := plan.Plan{
-		Files: []plan.FileOutput{{Path: "hello.txt", Content: "new", Mode: "create"}},
+	p := runtime.Plan{
+		Files: []runtime.FileOutput{{Path: "hello.txt", Content: "new", Mode: "create"}},
 	}
 
 	target := write.NewFilesystemTarget(root)
@@ -106,8 +105,8 @@ func TestWritePlanOverwriteModeReplacesExistingFile(t *testing.T) {
 		t.Fatalf("seed existing file: %v", err)
 	}
 
-	p := plan.Plan{
-		Files: []plan.FileOutput{{Path: "hello.txt", Content: "new", Mode: "overwrite"}},
+	p := runtime.Plan{
+		Files: []runtime.FileOutput{{Path: "hello.txt", Content: "new", Mode: "overwrite"}},
 	}
 
 	target := write.NewFilesystemTarget(root)
@@ -132,8 +131,8 @@ func TestWritePlanSkipIfExistsModeKeepsExistingFile(t *testing.T) {
 		t.Fatalf("seed existing file: %v", err)
 	}
 
-	p := plan.Plan{
-		Files: []plan.FileOutput{{Path: "hello.txt", Content: "new", Mode: "skip-if-exists"}},
+	p := runtime.Plan{
+		Files: []runtime.FileOutput{{Path: "hello.txt", Content: "new", Mode: "skip-if-exists"}},
 	}
 
 	target := write.NewFilesystemTarget(root)
@@ -164,8 +163,8 @@ func TestWritePlanWithDiagnosticsReturnsFileExistsDiagnostic(t *testing.T) {
 		t.Fatalf("seed existing file: %v", err)
 	}
 
-	p := plan.Plan{
-		Files: []plan.FileOutput{{Path: "hello.txt", Content: "new", Mode: "create"}},
+	p := runtime.Plan{
+		Files: []runtime.FileOutput{{Path: "hello.txt", Content: "new", Mode: "create"}},
 	}
 
 	target := write.NewFilesystemTarget(root)
@@ -182,8 +181,8 @@ func TestWritePlanWithDiagnosticsReturnsFileExistsDiagnostic(t *testing.T) {
 }
 
 func TestWritePlanWithDiagnosticsReturnsPathEscapeDiagnostic(t *testing.T) {
-	p := plan.Plan{
-		Files: []plan.FileOutput{{Path: "../escape.txt", Content: "nope", Mode: "create"}},
+	p := runtime.Plan{
+		Files: []runtime.FileOutput{{Path: "../escape.txt", Content: "nope", Mode: "create"}},
 	}
 
 	target := write.NewFilesystemTarget(t.TempDir())
@@ -200,8 +199,8 @@ func TestWritePlanWithDiagnosticsReturnsPathEscapeDiagnostic(t *testing.T) {
 }
 
 func TestWritePlanWithDiagnosticsReturnsUnsupportedWriteModeDiagnostic(t *testing.T) {
-	p := plan.Plan{
-		Files: []plan.FileOutput{{Path: "hello.txt", Content: "nope", Mode: "merge"}},
+	p := runtime.Plan{
+		Files: []runtime.FileOutput{{Path: "hello.txt", Content: "nope", Mode: "merge"}},
 	}
 
 	target := write.NewMemoryTarget()

@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/alfariiizi/vxt"
-	"github.com/alfariiizi/vxt/source"
+	"github.com/vandordev/vxt"
+	"github.com/vandordev/vxt/source"
 )
 
 func TestRenderSingleFileOriskinUsecaseTemplate(t *testing.T) {

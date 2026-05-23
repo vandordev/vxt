@@ -1,6 +1,6 @@
 package model
 
-import "github.com/alfariiizi/vxt/source"
+import "github.com/vandordev/vxt/source"
 
 type InputDecl struct {
 	Name     string

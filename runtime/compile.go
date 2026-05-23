@@ -4,22 +4,24 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/alfariiizi/vxt/diag"
-	"github.com/alfariiizi/vxt/model"
-	"github.com/alfariiizi/vxt/source"
-	"github.com/alfariiizi/vxt/syntax"
+	"github.com/vandordev/vxt/diag"
+	"github.com/vandordev/vxt/internal/syntax"
+	"github.com/vandordev/vxt/source"
 )
 
+// CompileResult captures the outcome of compiling a single-file or document template.
 type CompileResult struct {
-	Template    *model.CompiledTemplate
-	Document    *model.CompiledDocument
+	Template    *CompiledTemplate
+	Document    *CompiledDocument
 	Diagnostics []diag.Diagnostic
 }
 
+// SourceResolver resolves one @use path into an in-memory source document.
 type SourceResolver interface {
 	Resolve(path string) (source.Source, error)
 }
 
+// MapResolver is a simple in-memory SourceResolver for tests and embedding use cases.
 type MapResolver map[string]source.Source
 
 func (m MapResolver) Resolve(path string) (source.Source, error) {
@@ -30,11 +32,12 @@ func (m MapResolver) Resolve(path string) (source.Source, error) {
 	return src, nil
 }
 
+// CompileSingle parses single-file template syntax and returns structured diagnostics on failure.
 func CompileSingle(src source.Source) CompileResult {
 	_, err := syntax.ParseTemplate(src)
 	if err == nil {
 		return CompileResult{
-			Template: &model.CompiledTemplate{Source: src},
+			Template: &CompiledTemplate{Source: src},
 		}
 	}
 
@@ -52,6 +55,7 @@ func CompileSingle(src source.Source) CompileResult {
 	}
 }
 
+// CompileDocument parses document-mode syntax and returns the compiled document contract.
 func CompileDocument(src source.Source) CompileResult {
 	doc, err := syntax.ParseDocument(src)
 	if err == nil {
@@ -74,6 +78,7 @@ func CompileDocument(src source.Source) CompileResult {
 	}
 }
 
+// CompileDocumentWithResolver parses a document and resolves any referenced definition documents.
 func CompileDocumentWithResolver(src source.Source, resolver SourceResolver) CompileResult {
 	result := CompileDocument(src)
 	if result.Document == nil || len(result.Diagnostics) > 0 {

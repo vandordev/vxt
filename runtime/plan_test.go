@@ -3,8 +3,8 @@ package runtime_test
 import (
 	"testing"
 
-	"github.com/alfariiizi/vxt/runtime"
-	"github.com/alfariiizi/vxt/source"
+	"github.com/vandordev/vxt/runtime"
+	"github.com/vandordev/vxt/source"
 )
 
 func TestPlanDocumentReturnsFileArtifactAndPlannedHooks(t *testing.T) {

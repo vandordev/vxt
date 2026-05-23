@@ -1,5 +1,6 @@
 package diag
 
+// Code identifies one stable diagnostic category emitted by vxt.
 type Code string
 
 const (

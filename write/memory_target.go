@@ -1,10 +1,12 @@
 package write
 
+// MemoryTarget records writes in memory for tests and embedding scenarios.
 type MemoryTarget struct {
 	files map[string][]byte
 	dirs  map[string]struct{}
 }
 
+// NewMemoryTarget creates an empty in-memory output target.
 func NewMemoryTarget() *MemoryTarget {
 	return &MemoryTarget{
 		files: map[string][]byte{},
@@ -38,6 +40,7 @@ func (m *MemoryTarget) WriteFile(path string, content []byte, mode string) (bool
 	return true, nil
 }
 
+// Files returns the currently written file contents keyed by relative path.
 func (m *MemoryTarget) Files() map[string][]byte {
 	return m.files
 }

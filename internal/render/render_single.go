@@ -4,11 +4,11 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/alfariiizi/vxt/diag"
-	"github.com/alfariiizi/vxt/expr"
-	"github.com/alfariiizi/vxt/model"
-	"github.com/alfariiizi/vxt/source"
-	"github.com/alfariiizi/vxt/syntax"
+	"github.com/vandordev/vxt/diag"
+	"github.com/vandordev/vxt/internal/expr"
+	"github.com/vandordev/vxt/internal/model"
+	"github.com/vandordev/vxt/source"
+	"github.com/vandordev/vxt/internal/syntax"
 )
 
 func RenderSingle(tpl *model.CompiledTemplate, ctx map[string]any) (string, []diag.Diagnostic) {

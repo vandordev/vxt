@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/alfariiizi/vxt/model"
-	"github.com/alfariiizi/vxt/source"
+	"github.com/vandordev/vxt/internal/model"
+	"github.com/vandordev/vxt/source"
 )
 
 var errUnexpectedEOF = errors.New("unterminated template expression")

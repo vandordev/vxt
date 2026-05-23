@@ -3,13 +3,12 @@ package runtime_test
 import (
 	"testing"
 
-	"github.com/alfariiizi/vxt/model"
-	"github.com/alfariiizi/vxt/runtime"
+	"github.com/vandordev/vxt/runtime"
 )
 
 func TestValidateDocumentInputRequiresDeclaredString(t *testing.T) {
-	doc := &model.CompiledDocument{
-		Inputs: []model.InputDecl{{Name: "name", TypeName: "string"}},
+	doc := &runtime.CompiledDocument{
+		Inputs: []runtime.InputDecl{{Name: "name", TypeName: "string"}},
 	}
 
 	result := runtime.ValidateDocument(doc, map[string]any{})
@@ -20,14 +19,14 @@ func TestValidateDocumentInputRequiresDeclaredString(t *testing.T) {
 }
 
 func TestValidateDocumentInputAgainstLocalNamedType(t *testing.T) {
-	doc := &model.CompiledDocument{
-		Types: []model.TypeDecl{{
+	doc := &runtime.CompiledDocument{
+		Types: []runtime.TypeDecl{{
 			Name: "Entity",
-			Fields: []model.TypeFieldDecl{
+			Fields: []runtime.TypeFieldDecl{
 				{Name: "name", TypeName: "string"},
 			},
 		}},
-		Inputs: []model.InputDecl{{Name: "entity", TypeName: "Entity"}},
+		Inputs: []runtime.InputDecl{{Name: "entity", TypeName: "Entity"}},
 	}
 
 	result := runtime.ValidateDocument(doc, map[string]any{
@@ -40,14 +39,14 @@ func TestValidateDocumentInputAgainstLocalNamedType(t *testing.T) {
 }
 
 func TestValidateDocumentInputAgainstLocalNamedTypeRequiresField(t *testing.T) {
-	doc := &model.CompiledDocument{
-		Types: []model.TypeDecl{{
+	doc := &runtime.CompiledDocument{
+		Types: []runtime.TypeDecl{{
 			Name: "Entity",
-			Fields: []model.TypeFieldDecl{
+			Fields: []runtime.TypeFieldDecl{
 				{Name: "name", TypeName: "string"},
 			},
 		}},
-		Inputs: []model.InputDecl{{Name: "entity", TypeName: "Entity"}},
+		Inputs: []runtime.InputDecl{{Name: "entity", TypeName: "Entity"}},
 	}
 
 	result := runtime.ValidateDocument(doc, map[string]any{
@@ -60,14 +59,14 @@ func TestValidateDocumentInputAgainstLocalNamedTypeRequiresField(t *testing.T) {
 }
 
 func TestValidateDocumentInputAgainstImportedNamedType(t *testing.T) {
-	doc := &model.CompiledDocument{
-		Types: []model.TypeDecl{{
+	doc := &runtime.CompiledDocument{
+		Types: []runtime.TypeDecl{{
 			Name: "Entity",
-			Fields: []model.TypeFieldDecl{
+			Fields: []runtime.TypeFieldDecl{
 				{Name: "name", TypeName: "string"},
 			},
 		}},
-		Inputs: []model.InputDecl{{Name: "entity", TypeName: "Entity"}},
+		Inputs: []runtime.InputDecl{{Name: "entity", TypeName: "Entity"}},
 	}
 
 	result := runtime.ValidateDocument(doc, map[string]any{

@@ -3,7 +3,7 @@ package schema_test
 import (
 	"testing"
 
-	"github.com/alfariiizi/vxt/schema"
+	"github.com/vandordev/vxt/internal/schema"
 )
 
 func TestValidateValueRejectsWrongPrimitiveType(t *testing.T) {

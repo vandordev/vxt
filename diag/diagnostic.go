@@ -1,7 +1,8 @@
 package diag
 
-import "github.com/alfariiizi/vxt/source"
+import "github.com/vandordev/vxt/source"
 
+// Severity describes the impact level of one diagnostic.
 type Severity string
 
 const (

@@ -1,18 +1,19 @@
 package runtime
 
 import (
-	"github.com/alfariiizi/vxt/diag"
-	"github.com/alfariiizi/vxt/expr"
-	planpkg "github.com/alfariiizi/vxt/plan"
-	"github.com/alfariiizi/vxt/render"
-	"github.com/alfariiizi/vxt/source"
+	"github.com/vandordev/vxt/diag"
+	"github.com/vandordev/vxt/internal/expr"
+	"github.com/vandordev/vxt/internal/render"
+	"github.com/vandordev/vxt/source"
 )
 
+// PlanResult captures planned filesystem outputs and any planning diagnostics.
 type PlanResult struct {
-	Plan        planpkg.Plan
+	Plan        Plan
 	Diagnostics []diag.Diagnostic
 }
 
+// PlanDocument renders one validated document into a concrete filesystem plan.
 func PlanDocument(validated ValidationResult) PlanResult {
 	result := PlanResult{}
 	if len(validated.Diagnostics) > 0 {
@@ -35,7 +36,7 @@ func PlanDocument(validated ValidationResult) PlanResult {
 			result.Diagnostics = append(result.Diagnostics, diags...)
 			return result
 		}
-		result.Plan.Dirs = append(result.Plan.Dirs, planpkg.DirOutput{Path: path})
+		result.Plan.Dirs = append(result.Plan.Dirs, DirOutput{Path: path})
 	}
 
 	for _, file := range validated.Document.Files {
@@ -58,7 +59,7 @@ func PlanDocument(validated ValidationResult) PlanResult {
 			return result
 		}
 
-		result.Plan.Files = append(result.Plan.Files, planpkg.FileOutput{
+		result.Plan.Files = append(result.Plan.Files, FileOutput{
 			Path:    path,
 			Content: content,
 			Mode:    file.Mode,
@@ -88,7 +89,7 @@ func PlanDocument(validated ValidationResult) PlanResult {
 				result.Diagnostics = append(result.Diagnostics, diags...)
 				return result
 			}
-			result.Plan.Dirs = append(result.Plan.Dirs, planpkg.DirOutput{Path: path})
+			result.Plan.Dirs = append(result.Plan.Dirs, DirOutput{Path: path})
 		}
 
 		for _, file := range conditional.Files {
@@ -111,7 +112,7 @@ func PlanDocument(validated ValidationResult) PlanResult {
 				return result
 			}
 
-			result.Plan.Files = append(result.Plan.Files, planpkg.FileOutput{
+			result.Plan.Files = append(result.Plan.Files, FileOutput{
 				Path:    path,
 				Content: content,
 				Mode:    file.Mode,
@@ -120,7 +121,7 @@ func PlanDocument(validated ValidationResult) PlanResult {
 	}
 
 	for _, hook := range validated.Document.Hooks {
-		result.Plan.PlannedHooks = append(result.Plan.PlannedHooks, planpkg.HooksFromDecls(hook.Event, hook.Run))
+		result.Plan.PlannedHooks = append(result.Plan.PlannedHooks, PlannedHook{Event: hook.Event, Run: hook.Run})
 	}
 
 	return result

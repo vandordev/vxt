@@ -3,8 +3,8 @@ package render_test
 import (
 	"testing"
 
-	"github.com/alfariiizi/vxt"
-	"github.com/alfariiizi/vxt/source"
+	"github.com/vandordev/vxt"
+	"github.com/vandordev/vxt/source"
 )
 
 func TestRenderSingleFileInterpolatesValue(t *testing.T) {
