@@ -91,6 +91,13 @@ func parseDocument(src source.Source, requireTemplate bool) (*model.CompiledDocu
 		case strings.HasPrefix(line, "@use "):
 			path := strings.Trim(strings.TrimSpace(strings.TrimPrefix(line, "@use ")), `"`)
 			doc.Uses = append(doc.Uses, model.UseDecl{Path: path})
+		case strings.HasPrefix(line, "@if "):
+			conditional, next, err := parseConditionalBlock(lines, i)
+			if err != nil {
+				return nil, err
+			}
+			doc.Conditionals = append(doc.Conditionals, conditional)
+			i = next
 		case strings.HasPrefix(line, "@type "):
 			typeDecl, next, err := parseTypeDecl(lines, i)
 			if err != nil {
@@ -140,25 +147,12 @@ func parseDocument(src source.Source, requireTemplate bool) (*model.CompiledDocu
 				Run:   strings.Trim(run, `"`),
 			})
 		case strings.HasPrefix(line, "@file "):
-			path := strings.Trim(strings.TrimSpace(strings.TrimPrefix(line, "@file ")), `"`)
-			var bodyLines []string
-			foundEnd := false
-			for j := i + 1; j < len(lines); j++ {
-				if strings.TrimSpace(lines[j]) == "@endfile" {
-					i = j
-					foundEnd = true
-					break
-				}
-				bodyLines = append(bodyLines, lines[j])
+			file, next, err := parseFileBlock(lines, i)
+			if err != nil {
+				return nil, err
 			}
-			if !foundEnd {
-				return nil, errUnexpectedEOF
-			}
-			doc.Files = append(doc.Files, model.FileBlock{
-				Path: path,
-				Body: strings.Join(bodyLines, "\n"),
-				Mode: "create",
-			})
+			doc.Files = append(doc.Files, file)
+			i = next
 		}
 	}
 
@@ -167,6 +161,64 @@ func parseDocument(src source.Source, requireTemplate bool) (*model.CompiledDocu
 	}
 
 	return doc, nil
+}
+
+func parseConditionalBlock(lines []string, start int) (model.ConditionalBlock, int, error) {
+	line := strings.TrimSpace(lines[start])
+	condition := strings.TrimSpace(strings.TrimPrefix(line, "@if "))
+	if condition == "" {
+		return model.ConditionalBlock{}, start, fmt.Errorf("invalid if directive")
+	}
+
+	block := model.ConditionalBlock{Condition: condition}
+	for i := start + 1; i < len(lines); i++ {
+		raw := strings.TrimSpace(lines[i])
+		if raw == "" {
+			continue
+		}
+		switch {
+		case raw == "@endif":
+			return block, i, nil
+		case strings.HasPrefix(raw, "@file "):
+			file, next, err := parseFileBlock(lines, i)
+			if err != nil {
+				return model.ConditionalBlock{}, start, err
+			}
+			block.Files = append(block.Files, file)
+			i = next
+		case strings.HasPrefix(raw, "@dir "):
+			path := strings.Trim(strings.TrimSpace(strings.TrimPrefix(raw, "@dir ")), `"`)
+			block.Dirs = append(block.Dirs, model.DirBlock{Path: path})
+		case strings.HasPrefix(raw, "@if "), raw == "@else":
+			return model.ConditionalBlock{}, start, fmt.Errorf("unsupported nested or alternate if directive")
+		default:
+			return model.ConditionalBlock{}, start, fmt.Errorf("unsupported directive inside @if block")
+		}
+	}
+
+	return model.ConditionalBlock{}, start, errUnexpectedEOF
+}
+
+func parseFileBlock(lines []string, start int) (model.FileBlock, int, error) {
+	line := strings.TrimSpace(lines[start])
+	path := strings.Trim(strings.TrimSpace(strings.TrimPrefix(line, "@file ")), `"`)
+	var bodyLines []string
+	foundEnd := false
+	for j := start + 1; j < len(lines); j++ {
+		if strings.TrimSpace(lines[j]) == "@endfile" {
+			foundEnd = true
+			return model.FileBlock{
+				Path: path,
+				Body: strings.Join(bodyLines, "\n"),
+				Mode: "create",
+			}, j, nil
+		}
+		bodyLines = append(bodyLines, lines[j])
+	}
+	if !foundEnd {
+		return model.FileBlock{}, start, errUnexpectedEOF
+	}
+	return model.FileBlock{}, start, errUnexpectedEOF
 }
 
 func parseTypeDecl(lines []string, start int) (model.TypeDecl, int, error) {

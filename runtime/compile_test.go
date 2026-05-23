@@ -129,3 +129,55 @@ func TestCompileDocumentWithResolverLoadsLocalUseSource(t *testing.T) {
 		t.Fatalf("got type %q", result.Document.Types[0].Name)
 	}
 }
+
+func TestCompileDocumentParsesConditionalFileBlocks(t *testing.T) {
+	src := source.Source{
+		ID: "if-doc.vxt",
+		Text: "@template demo\n" +
+			"@if options.model\n" +
+			"@file \"model.ts\"\n" +
+			"export interface Model {}\n" +
+			"@endfile\n" +
+			"@endif\n",
+	}
+
+	result := runtime.CompileDocument(src)
+
+	if result.Document == nil {
+		t.Fatal("expected compiled document")
+	}
+	if len(result.Document.Conditionals) != 1 {
+		t.Fatalf("got %d conditionals", len(result.Document.Conditionals))
+	}
+	if result.Document.Conditionals[0].Condition != "options.model" {
+		t.Fatalf("got condition %q", result.Document.Conditionals[0].Condition)
+	}
+	if len(result.Document.Conditionals[0].Files) != 1 {
+		t.Fatalf("got %d conditional files", len(result.Document.Conditionals[0].Files))
+	}
+}
+
+func TestCompileDocumentParsesConditionalDirectoryBlocks(t *testing.T) {
+	src := source.Source{
+		ID: "if-dir-doc.vxt",
+		Text: "@template demo\n" +
+			"@if has_module\n" +
+			"@dir \"src/modules/core\"\n" +
+			"@endif\n",
+	}
+
+	result := runtime.CompileDocument(src)
+
+	if result.Document == nil {
+		t.Fatal("expected compiled document")
+	}
+	if len(result.Document.Conditionals) != 1 {
+		t.Fatalf("got %d conditionals", len(result.Document.Conditionals))
+	}
+	if len(result.Document.Conditionals[0].Dirs) != 1 {
+		t.Fatalf("got %d conditional dirs", len(result.Document.Conditionals[0].Dirs))
+	}
+	if result.Document.Conditionals[0].Dirs[0].Path != "src/modules/core" {
+		t.Fatalf("got dir path %q", result.Document.Conditionals[0].Dirs[0].Path)
+	}
+}

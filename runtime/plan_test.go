@@ -77,3 +77,113 @@ func TestPlanDocumentRendersLocalPartialIncludes(t *testing.T) {
 		t.Fatalf("got content %q", result.Plan.Files[0].Content)
 	}
 }
+
+func TestPlanDocumentIncludesConditionalFilesWhenTruthy(t *testing.T) {
+	src := source.Source{
+		ID: "if-plan-doc.vxt",
+		Text: "@template demo\n" +
+			"@if options.model\n" +
+			"@file \"model.ts\"\n" +
+			"export interface Model {}\n" +
+			"@endfile\n" +
+			"@endif\n",
+	}
+
+	compiled := runtime.CompileDocument(src)
+	validated := runtime.ValidationResult{
+		Document: compiled.Document,
+		Input: map[string]any{
+			"options": map[string]any{"model": true},
+		},
+	}
+	result := runtime.PlanDocument(validated)
+
+	if len(result.Diagnostics) != 0 {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+	if len(result.Plan.Files) != 1 {
+		t.Fatalf("got %d files", len(result.Plan.Files))
+	}
+	if result.Plan.Files[0].Path != "model.ts" {
+		t.Fatalf("got file path %q", result.Plan.Files[0].Path)
+	}
+}
+
+func TestPlanDocumentExcludesConditionalFilesWhenFalse(t *testing.T) {
+	src := source.Source{
+		ID: "if-plan-doc-false.vxt",
+		Text: "@template demo\n" +
+			"@if options.model\n" +
+			"@file \"model.ts\"\n" +
+			"export interface Model {}\n" +
+			"@endfile\n" +
+			"@endif\n",
+	}
+
+	compiled := runtime.CompileDocument(src)
+	validated := runtime.ValidationResult{
+		Document: compiled.Document,
+		Input: map[string]any{
+			"options": map[string]any{"model": false},
+		},
+	}
+	result := runtime.PlanDocument(validated)
+
+	if len(result.Diagnostics) != 0 {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+	if len(result.Plan.Files) != 0 {
+		t.Fatalf("got %d files", len(result.Plan.Files))
+	}
+}
+
+func TestPlanDocumentIncludesConditionalDirectoriesWhenTruthy(t *testing.T) {
+	src := source.Source{
+		ID: "if-plan-dir-doc.vxt",
+		Text: "@template demo\n" +
+			"@if has_module\n" +
+			"@dir \"src/modules/core\"\n" +
+			"@endif\n",
+	}
+
+	compiled := runtime.CompileDocument(src)
+	validated := runtime.ValidationResult{
+		Document: compiled.Document,
+		Input:    map[string]any{"has_module": true},
+	}
+	result := runtime.PlanDocument(validated)
+
+	if len(result.Diagnostics) != 0 {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+	if len(result.Plan.Dirs) != 1 {
+		t.Fatalf("got %d dirs", len(result.Plan.Dirs))
+	}
+	if result.Plan.Dirs[0].Path != "src/modules/core" {
+		t.Fatalf("got dir path %q", result.Plan.Dirs[0].Path)
+	}
+}
+
+func TestPlanDocumentExcludesConditionalDirectoriesWhenFalse(t *testing.T) {
+	src := source.Source{
+		ID: "if-plan-dir-doc-false.vxt",
+		Text: "@template demo\n" +
+			"@if has_module\n" +
+			"@dir \"src/modules/core\"\n" +
+			"@endif\n",
+	}
+
+	compiled := runtime.CompileDocument(src)
+	validated := runtime.ValidationResult{
+		Document: compiled.Document,
+		Input:    map[string]any{"has_module": false},
+	}
+	result := runtime.PlanDocument(validated)
+
+	if len(result.Diagnostics) != 0 {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+	if len(result.Plan.Dirs) != 0 {
+		t.Fatalf("got %d dirs", len(result.Plan.Dirs))
+	}
+}

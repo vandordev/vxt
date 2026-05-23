@@ -38,6 +38,12 @@ type UseDecl struct {
 	Path string
 }
 
+type ConditionalBlock struct {
+	Condition string
+	Files     []FileBlock
+	Dirs      []DirBlock
+}
+
 type HookDecl struct {
 	Event string
 	Run   string
@@ -45,13 +51,14 @@ type HookDecl struct {
 
 // CompiledDocument is the stable public object for document mode.
 type CompiledDocument struct {
-	Source   source.Source
-	Template string
-	Types    []TypeDecl
-	Inputs   []InputDecl
-	Dirs     []DirBlock
-	Partials []PartialDecl
-	Uses     []UseDecl
-	Files    []FileBlock
-	Hooks    []HookDecl
+	Source       source.Source
+	Template     string
+	Types        []TypeDecl
+	Inputs       []InputDecl
+	Dirs         []DirBlock
+	Partials     []PartialDecl
+	Uses         []UseDecl
+	Conditionals []ConditionalBlock
+	Files        []FileBlock
+	Hooks        []HookDecl
 }
