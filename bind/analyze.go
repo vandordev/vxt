@@ -22,6 +22,10 @@ type analyzedField struct {
 	GoName     string
 	SchemaName string
 	GoType     string
+	TypeName   string
+	Optional   bool
+	Array      bool
+	Primitive  bool
 }
 
 func analyzeDocument(packageName string, doc *runtime.CompiledDocument) (analyzedDocument, error) {
@@ -41,6 +45,10 @@ func analyzeDocument(packageName string, doc *runtime.CompiledDocument) (analyze
 				GoName:     toExportedGoName(field.Name),
 				SchemaName: field.Name,
 				GoType:     goTypeForField(field),
+				TypeName:   field.TypeName,
+				Optional:   field.Optional,
+				Array:      field.Array,
+				Primitive:  isPrimitiveType(field.TypeName),
 			})
 		}
 		result.Types = append(result.Types, analyzed)
@@ -51,6 +59,8 @@ func analyzeDocument(packageName string, doc *runtime.CompiledDocument) (analyze
 			GoName:     toExportedGoName(input.Name),
 			SchemaName: input.Name,
 			GoType:     goTypeForInput(input, doc.Types),
+			TypeName:   input.TypeName,
+			Primitive:  isPrimitiveType(input.TypeName),
 		})
 	}
 

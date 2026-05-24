@@ -3,6 +3,7 @@ package bind
 import (
 	"errors"
 	"fmt"
+	"path/filepath"
 
 	"github.com/vandordev/vxt/runtime"
 )
@@ -21,10 +22,20 @@ func Generate(req Request) (Output, error) {
 		return Output{}, fmt.Errorf("bind: compile failed: %s", compiled.Diagnostics[0].Message)
 	}
 
-	_, err := analyzeDocument(req.PackageName, compiled.Document)
+	analyzed, err := analyzeDocument(req.PackageName, compiled.Document)
 	if err != nil {
 		return Output{}, err
 	}
 
-	return Output{}, ErrNotImplemented
+	generated, err := emitGeneratedFile(analyzed, embeddedAssets{Main: req.Document})
+	if err != nil {
+		return Output{}, err
+	}
+
+	return Output{
+		Files: []File{{
+			Path:    filepath.Join(".vxt", analyzed.Template+"_gen.go"),
+			Content: generated,
+		}},
+	}, nil
 }

@@ -21,10 +21,13 @@ func TestGenerateReturnsOneGoFileForMinimalDocument(t *testing.T) {
 		PackageName: "hellovxt",
 		Document:    src,
 	})
-	if err == nil {
-		t.Fatal("expected generator to be unimplemented initially")
+	if err != nil {
+		t.Fatalf("unexpected generate error: %v", err)
 	}
-	if len(out.Files) != 0 {
+	if len(out.Files) != 1 {
 		t.Fatalf("got %d files", len(out.Files))
+	}
+	if out.Files[0].Path != ".vxt/hello_gen.go" {
+		t.Fatalf("got file path %q", out.Files[0].Path)
 	}
 }

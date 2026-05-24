@@ -58,3 +58,12 @@ func goTypeName(typeName string) string {
 		return typeName
 	}
 }
+
+func isPrimitiveType(typeName string) bool {
+	switch typeName {
+	case "string", "bool", "int", "float":
+		return true
+	default:
+		return false
+	}
+}
