@@ -103,3 +103,91 @@ func main() {
 		t.Fatalf("got output %q", strings.TrimSpace(string(outBytes)))
 	}
 }
+
+func TestGenerateToDirWritesBindingsAndConsumerCanPlan(t *testing.T) {
+	repoRoot, err := filepath.Abs("..")
+	if err != nil {
+		t.Fatalf("resolve repo root: %v", err)
+	}
+
+	serviceText, err := os.ReadFile(filepath.Join("testdata", "service", "service.vxt"))
+	if err != nil {
+		t.Fatalf("read service template: %v", err)
+	}
+	schemaText, err := os.ReadFile(filepath.Join("testdata", "service", "schema.vxt"))
+	if err != nil {
+		t.Fatalf("read schema template: %v", err)
+	}
+
+	tmpDir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(tmpDir, "go.mod"), []byte(strings.TrimSpace(`
+module example.com/consumer
+
+go 1.24
+
+require github.com/vandordev/vxt v0.0.0
+
+replace github.com/vandordev/vxt => `+repoRoot+`
+`)+"\n"), 0o644); err != nil {
+		t.Fatalf("write go.mod: %v", err)
+	}
+
+	report, err := bind.GenerateToDir(bind.Request{
+		PackageName: "servicevxt",
+		Document: source.Source{
+			ID:   "service.vxt",
+			Path: "service.vxt",
+			Text: string(serviceText),
+		},
+		Uses: map[string]source.Source{
+			"./schema.vxt": {
+				ID:   "schema.vxt",
+				Path: "schema.vxt",
+				Text: string(schemaText),
+			},
+		},
+	}, filepath.Join(tmpDir, ".vxt"))
+	if err != nil {
+		t.Fatalf("generate to dir: %v", err)
+	}
+	if len(report.FilesWritten)+len(report.FilesOverwritten) != 1 {
+		t.Fatalf("unexpected write report: %#v", report)
+	}
+
+	mainSource := `package main
+
+import (
+	"fmt"
+
+	servicevxt "example.com/consumer/.vxt"
+)
+
+func main() {
+	plan, err := servicevxt.Plan(servicevxt.Input{
+		Entity: servicevxt.Entity{
+			Name:          "User",
+			PackageName:   "user",
+			HasRepository: true,
+		},
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(len(plan.Dirs), len(plan.Files))
+}
+`
+	if err := os.WriteFile(filepath.Join(tmpDir, "main.go"), []byte(mainSource), 0o644); err != nil {
+		t.Fatalf("write main.go: %v", err)
+	}
+
+	cmd := exec.Command("go", "run", ".")
+	cmd.Dir = tmpDir
+	outBytes, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("go run failed: %v\n%s", err, string(outBytes))
+	}
+	if strings.TrimSpace(string(outBytes)) != "1 2" {
+		t.Fatalf("got output %q", strings.TrimSpace(string(outBytes)))
+	}
+}

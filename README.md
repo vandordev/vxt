@@ -167,6 +167,21 @@ if err != nil {
 // write out.Files into .vxt/
 ```
 
+Write directly to a generated directory:
+
+```go
+report, err := bind.GenerateToDir(bind.Request{
+	PackageName: "servicevxt",
+	Document:    mainSource,
+	Uses:        localDefinitionSources,
+}, ".vxt")
+if err != nil {
+	panic(err)
+}
+
+_ = report
+```
+
 Then consume the generated package:
 
 ```go

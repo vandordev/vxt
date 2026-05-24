@@ -55,3 +55,12 @@ func Generate(req Request) (Output, error) {
 		}},
 	}, nil
 }
+
+// GenerateToDir generates one binding output set and writes it into dir.
+func GenerateToDir(req Request, dir string) (WriteReport, error) {
+	out, err := Generate(req)
+	if err != nil {
+		return WriteReport{}, err
+	}
+	return WriteOutput(out, dir)
+}
