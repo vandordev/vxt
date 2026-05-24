@@ -77,8 +77,9 @@ func emitGeneratedFile(doc analyzedDocument, assets embeddedAssets) (string, err
 }
 
 func emitTypeConverter(b *strings.Builder, typ analyzedType) {
+	fnName := lowerFirst(typ.Name)
 	receiver := strings.ToLower(string(typ.Name[0]))
-	writeLine(b, "func %sToRuntimeValue(%s %s) map[string]any {", receiver, receiver, typ.Name)
+	writeLine(b, "func %sToRuntimeValue(%s %s) map[string]any {", fnName, receiver, typ.Name)
 	writeLine(b, "\tout := map[string]any{}")
 	for _, field := range typ.Fields {
 		access := receiver + "." + field.GoName

@@ -1,0 +1,37 @@
+@template service
+
+@use "./schema.vxt"
+
+@input entity Entity
+
+@dir "internal/{{ entity.package_name }}"
+
+@partial imports
+import "context"
+@endpartial
+
+@file "internal/{{ entity.package_name }}/service.go"
+{{ include imports }}
+
+package {{ entity.package_name }}
+
+type Service struct {}
+
+func NewService() *Service {
+	return &Service{}
+}
+
+func (s *Service) Get{{ entity.name }}(ctx context.Context) error {
+	return nil
+}
+@endfile
+
+@if entity.has_repository
+@file "internal/{{ entity.package_name }}/repository.go"
+package {{ entity.package_name }}
+
+type Repository interface {
+	Find{{ entity.name }}() error
+}
+@endfile
+@endif

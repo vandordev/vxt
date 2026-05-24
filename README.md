@@ -137,6 +137,48 @@ Current non-goals:
 Hooks are surfaced only as planned metadata in document plans. They are not
 executed by `vxt` in `v0.1`.
 
+## Generated Go Bindings
+
+`vxt` also exposes a library-only binding generator through
+`github.com/vandordev/vxt/bind`.
+
+The first iteration is intentionally narrow:
+
+- document mode only
+- generated source is written under `.vxt/`
+- generated bindings are intended to be committed
+- local-path `@use` is embedded into the generated package
+
+The generated package gives Go consumers a typed `Input` contract and typed
+wrappers over `Compile`, `Validate`, `Plan`, and `Write`.
+
+Minimal usage:
+
+```go
+out, err := bind.Generate(bind.Request{
+	PackageName: "servicevxt",
+	Document:    mainSource,
+	Uses:        localDefinitionSources,
+})
+if err != nil {
+	panic(err)
+}
+
+// write out.Files into .vxt/
+```
+
+Then consume the generated package:
+
+```go
+plan, err := servicevxt.Plan(servicevxt.Input{
+	Entity: servicevxt.Entity{
+		Name:          "User",
+		PackageName:   "user",
+		HasRepository: true,
+	},
+})
+```
+
 See [docs/releases/v0.1.0.md](docs/releases/v0.1.0.md) for the curated release
 scope and verification checklist.
 

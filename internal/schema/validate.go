@@ -31,6 +31,10 @@ func ValidateValue(typeName string, value any) error {
 		if _, ok := value.(bool); !ok {
 			return fmt.Errorf("expected boolean")
 		}
+	case "bool":
+		if _, ok := value.(bool); !ok {
+			return fmt.Errorf("expected boolean")
+		}
 	default:
 		return fmt.Errorf("unsupported type %q", typeName)
 	}

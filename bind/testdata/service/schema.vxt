@@ -1,0 +1,5 @@
+@type Entity {
+  name: string
+  package_name: string
+  has_repository: bool
+}
