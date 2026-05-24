@@ -22,12 +22,26 @@ func Generate(req Request) (Output, error) {
 		return Output{}, fmt.Errorf("bind: compile failed: %s", compiled.Diagnostics[0].Message)
 	}
 
+	useSources, err := collectLocalUseSources(compiled.Document, req.Uses)
+	if err != nil {
+		return Output{}, err
+	}
+	if len(useSources) > 0 {
+		compiled = runtime.CompileDocumentWithResolver(req.Document, runtime.MapResolver(useSources))
+		if len(compiled.Diagnostics) > 0 {
+			return Output{}, fmt.Errorf("bind: compile failed: %s", compiled.Diagnostics[0].Message)
+		}
+	}
+
 	analyzed, err := analyzeDocument(req.PackageName, compiled.Document)
 	if err != nil {
 		return Output{}, err
 	}
 
-	generated, err := emitGeneratedFile(analyzed, embeddedAssets{Main: req.Document})
+	generated, err := emitGeneratedFile(analyzed, embeddedAssets{
+		Main: req.Document,
+		Uses: useSources,
+	})
 	if err != nil {
 		return Output{}, err
 	}

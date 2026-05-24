@@ -6,14 +6,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-
-	"github.com/vandordev/vxt/source"
 )
-
-type embeddedAssets struct {
-	Main source.Source
-	Uses map[string]source.Source
-}
 
 func emitGeneratedFile(doc analyzedDocument, assets embeddedAssets) (string, error) {
 	var b strings.Builder
@@ -174,7 +167,7 @@ func emitWrappers(b *strings.Builder) {
 	writeLine(b, "\tif len(planned.Diagnostics) > 0 {")
 	writeLine(b, "\t\treturn runtime.WriteResult{")
 	writeLine(b, "\t\t\tDiagnostics: planned.Diagnostics,")
-	writeLine(b, "\t\t\tErr:         fmt.Errorf(\"%%s\", planned.Diagnostics[0].Message),")
+			writeLine(b, "\t\t\tErr:         fmt.Errorf(\"%%s\", planned.Diagnostics[0].Message),")
 	writeLine(b, "\t\t}")
 	writeLine(b, "\t}")
 	writeLine(b, "\treturn runtime.WritePlanWithDiagnostics(planned.Plan, target)")
