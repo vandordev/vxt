@@ -24,9 +24,12 @@ func TestWriteOutputCreatesDirectoryAndWritesGeneratedFile(t *testing.T) {
 		}},
 	}
 
-	report, err := bind.WriteOutput(out, outDir)
+	report, err := bind.WriteOutput(out, outDir, bind.WriteOptions{})
 	if err != nil {
 		t.Fatalf("unexpected write error: %v", err)
+	}
+	if report.DryRun {
+		t.Fatal("expected non-dry-run report")
 	}
 	if report.OutputDir != outDir {
 		t.Fatalf("got output dir %q", report.OutputDir)
@@ -36,6 +39,12 @@ func TestWriteOutputCreatesDirectoryAndWritesGeneratedFile(t *testing.T) {
 	}
 	if len(report.FilesOverwritten) != 0 {
 		t.Fatalf("got %d overwritten files", len(report.FilesOverwritten))
+	}
+	if len(report.Actions) != 1 {
+		t.Fatalf("got %d actions", len(report.Actions))
+	}
+	if report.Actions[0].Action != bind.WriteActionCreate {
+		t.Fatalf("got action %#v", report.Actions[0])
 	}
 
 	target := filepath.Join(outDir, "service_gen.go")
@@ -72,15 +81,24 @@ func TestWriteOutputOverwritesExistingGeneratedFile(t *testing.T) {
 		}},
 	}
 
-	report, err := bind.WriteOutput(out, outDir)
+	report, err := bind.WriteOutput(out, outDir, bind.WriteOptions{})
 	if err != nil {
 		t.Fatalf("unexpected write error: %v", err)
+	}
+	if report.DryRun {
+		t.Fatal("expected non-dry-run report")
 	}
 	if len(report.FilesWritten) != 0 {
 		t.Fatalf("got %d written files", len(report.FilesWritten))
 	}
 	if len(report.FilesOverwritten) != 1 {
 		t.Fatalf("got %d overwritten files", len(report.FilesOverwritten))
+	}
+	if len(report.Actions) != 1 {
+		t.Fatalf("got %d actions", len(report.Actions))
+	}
+	if report.Actions[0].Action != bind.WriteActionOverwrite {
+		t.Fatalf("got action %#v", report.Actions[0])
 	}
 
 	content, err := os.ReadFile(target)
@@ -129,15 +147,21 @@ func TestWriteOutputScopedReconcileRemovesOnlyOwnedStaleFiles(t *testing.T) {
 		}},
 	}
 
-	report, err := bind.WriteOutput(out, outDir)
+	report, err := bind.WriteOutput(out, outDir, bind.WriteOptions{})
 	if err != nil {
 		t.Fatalf("unexpected write error: %v", err)
+	}
+	if report.DryRun {
+		t.Fatal("expected non-dry-run report")
 	}
 	if len(report.FilesRemoved) != 1 {
 		t.Fatalf("got %d removed files", len(report.FilesRemoved))
 	}
 	if report.FilesRemoved[0] != staleOwnedPath {
 		t.Fatalf("removed %q", report.FilesRemoved[0])
+	}
+	if len(report.Actions) != 2 {
+		t.Fatalf("got %d actions", len(report.Actions))
 	}
 
 	if _, err := os.Stat(currentPath); err != nil {

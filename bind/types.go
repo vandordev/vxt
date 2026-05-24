@@ -22,10 +22,32 @@ type Output struct {
 	Files       []File
 }
 
+// WriteOptions controls bind output write behavior.
+type WriteOptions struct {
+	DryRun bool
+}
+
+// WriteActionKind describes one filesystem change kind.
+type WriteActionKind string
+
+const (
+	WriteActionCreate    WriteActionKind = "create"
+	WriteActionOverwrite WriteActionKind = "overwrite"
+	WriteActionRemove    WriteActionKind = "remove"
+)
+
+// WriteAction records one concrete or planned file action.
+type WriteAction struct {
+	Path   string
+	Action WriteActionKind
+}
+
 // WriteReport describes one bind output write operation.
 type WriteReport struct {
+	DryRun           bool
 	OutputDir        string
 	FilesWritten     []string
 	FilesOverwritten []string
 	FilesRemoved     []string
+	Actions          []WriteAction
 }

@@ -146,7 +146,7 @@ replace github.com/vandordev/vxt => `+repoRoot+`
 				Text: string(schemaText),
 			},
 		},
-	}, filepath.Join(tmpDir, ".vxt"))
+	}, filepath.Join(tmpDir, ".vxt"), bind.WriteOptions{})
 	if err != nil {
 		t.Fatalf("generate to dir: %v", err)
 	}

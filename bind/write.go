@@ -7,32 +7,55 @@ import (
 )
 
 // WriteOutput writes generated binding output into one explicit output directory.
-func WriteOutput(out Output, dir string) (WriteReport, error) {
+func WriteOutput(out Output, dir string, opts WriteOptions) (WriteReport, error) {
 	if dir == "" {
 		return WriteReport{}, fmt.Errorf("bind: output dir is required")
 	}
+
+	actions, err := planWriteActions(out, dir)
+	if err != nil {
+		return WriteReport{}, fmt.Errorf("bind: plan write actions: %w", err)
+	}
+
+	report := WriteReport{DryRun: opts.DryRun, OutputDir: dir}
+	for _, action := range actions {
+		report.Actions = append(report.Actions, WriteAction{
+			Path:   action.Path,
+			Action: action.Action,
+		})
+
+		switch action.Action {
+		case WriteActionCreate:
+			report.FilesWritten = append(report.FilesWritten, action.Path)
+		case WriteActionOverwrite:
+			report.FilesOverwritten = append(report.FilesOverwritten, action.Path)
+		case WriteActionRemove:
+			report.FilesRemoved = append(report.FilesRemoved, action.Path)
+		}
+	}
+
+	if opts.DryRun {
+		return report, nil
+	}
+
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return WriteReport{}, fmt.Errorf("bind: create output dir: %w", err)
 	}
 
-	report := WriteReport{OutputDir: dir}
-	for _, file := range out.Files {
-		overwrote, absPath, err := writeGeneratedFile(dir, file)
-		if err != nil {
-			return report, err
+	for _, action := range actions {
+		switch action.Action {
+		case WriteActionCreate, WriteActionOverwrite:
+			if err := os.WriteFile(action.Path, []byte(action.Content), 0o644); err != nil {
+				return report, fmt.Errorf("bind: write generated file: %w", err)
+			}
+		case WriteActionRemove:
+			if err := os.Remove(action.Path); err != nil {
+				return report, fmt.Errorf("bind: remove stale file: %w", err)
+			}
+		default:
+			return report, fmt.Errorf("bind: unsupported write action %q", action.Action)
 		}
-		if overwrote {
-			report.FilesOverwritten = append(report.FilesOverwritten, absPath)
-			continue
-		}
-		report.FilesWritten = append(report.FilesWritten, absPath)
 	}
-
-	removed, err := reconcileOwnedFiles(out, dir)
-	if err != nil {
-		return report, err
-	}
-	report.FilesRemoved = append(report.FilesRemoved, removed...)
 
 	return report, nil
 }
@@ -52,6 +75,7 @@ func writeGeneratedFile(dir string, file File) (overwrote bool, absPath string, 
 }
 
 func reconcileOwnedFiles(out Output, dir string) ([]string, error) {
+	// Deprecated by planWriteActions. Kept temporarily for compatibility with older commits.
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, fmt.Errorf("bind: read output dir: %w", err)
