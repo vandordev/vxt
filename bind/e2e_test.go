@@ -191,3 +191,45 @@ func main() {
 		t.Fatalf("got output %q", strings.TrimSpace(string(outBytes)))
 	}
 }
+
+func TestGenerateToDirDryRunReportsChangesWithoutWritingFiles(t *testing.T) {
+	serviceText, err := os.ReadFile(filepath.Join("testdata", "service", "service.vxt"))
+	if err != nil {
+		t.Fatalf("read service template: %v", err)
+	}
+	schemaText, err := os.ReadFile(filepath.Join("testdata", "service", "schema.vxt"))
+	if err != nil {
+		t.Fatalf("read schema template: %v", err)
+	}
+
+	tmpDir := t.TempDir()
+	outDir := filepath.Join(tmpDir, ".vxt")
+
+	report, err := bind.GenerateToDir(bind.Request{
+		PackageName: "servicevxt",
+		Document: source.Source{
+			ID:   "service.vxt",
+			Path: "service.vxt",
+			Text: string(serviceText),
+		},
+		Uses: map[string]source.Source{
+			"./schema.vxt": {
+				ID:   "schema.vxt",
+				Path: "schema.vxt",
+				Text: string(schemaText),
+			},
+		},
+	}, outDir, bind.WriteOptions{DryRun: true})
+	if err != nil {
+		t.Fatalf("generate to dir dry-run: %v", err)
+	}
+	if !report.DryRun {
+		t.Fatal("expected dry-run report")
+	}
+	if len(report.FilesWritten)+len(report.FilesOverwritten) != 1 {
+		t.Fatalf("unexpected dry-run report: %#v", report)
+	}
+	if _, err := os.Stat(outDir); !os.IsNotExist(err) {
+		t.Fatalf("expected dry-run to avoid creating output dir, stat err=%v", err)
+	}
+}

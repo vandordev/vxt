@@ -174,7 +174,22 @@ report, err := bind.GenerateToDir(bind.Request{
 	PackageName: "servicevxt",
 	Document:    mainSource,
 	Uses:        localDefinitionSources,
-}, ".vxt")
+}, ".vxt", bind.WriteOptions{})
+if err != nil {
+	panic(err)
+}
+
+_ = report
+```
+
+Preview filesystem changes without writing:
+
+```go
+report, err := bind.GenerateToDir(bind.Request{
+	PackageName: "servicevxt",
+	Document:    mainSource,
+	Uses:        localDefinitionSources,
+}, ".vxt", bind.WriteOptions{DryRun: true})
 if err != nil {
 	panic(err)
 }
