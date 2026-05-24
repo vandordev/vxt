@@ -21,3 +21,11 @@ type Output struct {
 	PackageName string
 	Files       []File
 }
+
+// WriteReport describes one bind output write operation.
+type WriteReport struct {
+	OutputDir        string
+	FilesWritten     []string
+	FilesOverwritten []string
+	FilesRemoved     []string
+}
