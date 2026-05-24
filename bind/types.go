@@ -17,5 +17,7 @@ type File struct {
 
 // Output is the generated file set for one request.
 type Output struct {
-	Files []File
+	BindingName string
+	PackageName string
+	Files       []File
 }

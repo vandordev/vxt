@@ -47,6 +47,8 @@ func Generate(req Request) (Output, error) {
 	}
 
 	return Output{
+		BindingName: analyzed.Template,
+		PackageName: analyzed.PackageName,
 		Files: []File{{
 			Path:    filepath.Join(".vxt", analyzed.Template+"_gen.go"),
 			Content: generated,
