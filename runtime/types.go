@@ -1,6 +1,9 @@
 package runtime
 
-import "github.com/vandordev/vxt/source"
+import (
+	"github.com/vandordev/vxt/source"
+	"github.com/vandordev/vxt/write"
+)
 
 // InputDecl declares one named document input and its required type.
 type InputDecl struct {
@@ -100,4 +103,22 @@ type Plan struct {
 	Dirs         []DirOutput
 	Files        []FileOutput
 	PlannedHooks []PlannedHook
+}
+
+// HookContext provides structured context for one hook execution.
+type HookContext struct {
+	Event       string
+	Plan        Plan
+	WriteReport write.WriteReport
+}
+
+// HookExecutor executes one planned hook with explicit context.
+type HookExecutor interface {
+	Execute(ctx HookContext, hook PlannedHook) error
+}
+
+// ApplyResult captures write and hook-execution outcomes for one applied plan.
+type ApplyResult struct {
+	WriteResult WriteResult
+	HookErrors  []error
 }

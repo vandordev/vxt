@@ -10,6 +10,9 @@ It exposes a staged pipeline:
 3. plan
 4. write
 
+And, when a caller chooses it explicitly, one post-write apply step for
+executing supported planned hooks through an injected executor.
+
 `vxt` is a library package today. It does not ship a CLI or standalone binary.
 
 ## Release Status
@@ -128,14 +131,15 @@ The current `v0.1` target is intentionally narrow:
 
 Current non-goals:
 
-- hook execution
 - trust policy
 - registry or package semantics
 - CLI behavior
 - AST manipulation as a public contract
 
-Hooks are surfaced only as planned metadata in document plans. They are not
-executed by `vxt` in `v0.1`.
+Hooks are always surfaced as planned metadata in document plans. `WritePlan`
+does not execute them. For explicit post-write workflow behavior, use
+`ApplyPlan(...)` with an injected `runtime.HookExecutor`. The initial supported
+event is `after:write` only.
 
 ## Generated Go Bindings
 
