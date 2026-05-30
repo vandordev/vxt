@@ -119,9 +119,9 @@ fmt.Println(report.FilesWritten)
 needed directories, rejects absolute paths and `..` escapes, and applies the
 file mode from each `@file` declaration.
 
-By default, file writes overwrite existing files. Use `mode=create` or
-`mode=skip-if-exists` on `@file` when the document should request stricter
-write behavior.
+By default, `@file` uses `mode=create`, so writing fails if the file already
+exists. Use `mode=overwrite` or `mode=skip-if-exists` when the document should
+request different write behavior.
 
 ## Common First Mistakes
 
