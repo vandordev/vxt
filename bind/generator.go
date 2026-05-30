@@ -8,7 +8,7 @@ import (
 	"github.com/vandordev/vxt/runtime"
 )
 
-// ErrNotImplemented is returned until the generator is implemented.
+// ErrNotImplemented is kept for compatibility with early pre-release callers.
 var ErrNotImplemented = errors.New("bind: generator not implemented")
 
 // Generate produces typed Go bindings for one document template.

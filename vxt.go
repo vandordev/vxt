@@ -4,8 +4,11 @@
 // The canonical product model is a staged pipeline:
 // compile -> validate -> plan -> write.
 //
-// v0.1 intentionally excludes hook execution, trust policy, package semantics,
-// and CLI behavior from the core contract.
+// Hooks are planned metadata by default. Callers that need post-write hook
+// execution can opt in with runtime.ApplyPlan and an injected executor.
+//
+// v0.1 intentionally excludes trust policy, package semantics, and CLI behavior
+// from the core contract.
 package vxt
 
 import (
