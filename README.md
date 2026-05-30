@@ -1,25 +1,34 @@
 # vxt
 
-`vxt` is a spec-first Go library for code and file generation under the Vandor
-organization.
+`vxt` is a spec-first Go library for turning `.vxt` templates into planned
+file output. It is designed for applications and tools that want a typed,
+inspectable generation pipeline instead of ad-hoc string rendering.
 
-It exposes a staged pipeline:
+The main path is document mode: a `.vxt` document declares inputs, files,
+directories, partials, optional sections, and hook metadata. Go code compiles
+the document, validates input, plans output, and writes that plan to a target.
 
-1. compile
-2. validate
-3. plan
-4. write
+## When to Use It
 
-And, when a caller chooses it explicitly, one post-write apply step for
-executing supported planned hooks through an injected executor.
+Use `vxt` when you want to:
 
-`vxt` is a library package today. It does not ship a CLI or standalone binary.
+- embed code or file generation in a Go program
+- validate template inputs before writing output
+- inspect planned files and directories before touching disk
+- write to memory in tests and to a rooted filesystem in production
+- generate typed Go bindings for a document-mode template
 
-## Release Status
+## What It Is Not
 
-`vxt` `v0.1.0` is the first public Go package release and should be treated as
-an experimental `v0.x` API. The supported public packages are deliberate, but
-controlled breaking changes may still happen before `v1.0.0`.
+`vxt` is library-only. It does not ship a CLI or standalone binary.
+
+It also does not provide:
+
+- trust policy
+- package registry semantics
+- automatic shell execution
+- public AST manipulation APIs
+- cross-language generated bindings
 
 ## Install
 
@@ -27,49 +36,10 @@ controlled breaking changes may still happen before `v1.0.0`.
 go get github.com/vandordev/vxt
 ```
 
-## Stable Public Packages
+## Quick Start: Document Mode
 
-The intended public contract for `v0.1` is limited to:
-
-- `github.com/vandordev/vxt`
-- `github.com/vandordev/vxt/runtime`
-- `github.com/vandordev/vxt/diag`
-- `github.com/vandordev/vxt/source`
-- `github.com/vandordev/vxt/write`
-
-Implementation packages under `internal/` are not public API and may change
-without notice.
-
-## Quick Start
-
-### Single-file rendering
-
-```go
-package main
-
-import (
-	"fmt"
-	
-	"github.com/vandordev/vxt"
-	"github.com/vandordev/vxt/source"
-)
-
-func main() {
-	out, diags := vxt.RenderSingleFile(source.Source{
-		ID:   "hello.vxt",
-		Text: "Hello {{ name }}",
-	}, map[string]any{
-		"name": "Vandor",
-	})
-	if len(diags) > 0 {
-		panic(diags[0].Message)
-	}
-
-	fmt.Println(out)
-}
-```
-
-### Document pipeline
+This example compiles a small `.vxt` document, validates its input, builds a
+plan, and writes the result into memory.
 
 ```go
 package main
@@ -84,7 +54,7 @@ import (
 
 func main() {
 	src := source.Source{
-		ID: "hello-doc.vxt",
+		ID: "hello.vxt",
 		Text: "@template hello\n" +
 			"@input name string\n" +
 			"@file \"hello.txt\"\n" +
@@ -116,105 +86,70 @@ func main() {
 	}
 
 	fmt.Println(report.FilesWritten)
+	fmt.Println(string(target.Files()["hello.txt"]))
 }
 ```
 
-## v0.1 Scope
+Use `write.NewFilesystemTarget(root)` when you are ready to write the same plan
+under a real output directory.
 
-The current `v0.1` target is intentionally narrow:
+## Pipeline Overview
 
-- single-file rendering through a convenience API
-- document-mode compile, validate, plan, and write
-- typed document input validation
-- structured diagnostics
-- output-target abstraction with filesystem and memory adapters
+The document-mode runtime is intentionally staged:
 
-Current non-goals:
+1. `runtime.CompileDocument` parses a document and returns a compiled contract.
+2. `runtime.ValidateDocument` checks caller-provided input against declared
+   inputs and document types.
+3. `runtime.PlanDocument` renders concrete directory, file, and hook metadata.
+4. `runtime.WritePlan` writes planned directories and files to an
+   `write.OutputTarget`.
+5. `runtime.ApplyPlan` is optional. It writes the plan and then executes
+   supported planned hooks through a caller-provided `runtime.HookExecutor`.
 
-- trust policy
-- registry or package semantics
-- CLI behavior
-- AST manipulation as a public contract
+`WritePlan` does not execute hooks. Hooks are metadata unless the caller
+explicitly chooses `ApplyPlan(...)` and provides an executor. The currently
+supported hook event for `ApplyPlan` is `after:write`.
 
-Hooks are always surfaced as planned metadata in document plans. `WritePlan`
-does not execute them. For explicit post-write workflow behavior, use
-`ApplyPlan(...)` with an injected `runtime.HookExecutor`. The initial supported
-event is `after:write` only.
+## Feature Snapshot
 
-## Generated Go Bindings
+- document-mode templates with `@template`, `@input`, `@type`, `@dir`,
+  `@file`, `@partial`, `@use`, `@if`, and `@hook`
+- single-file rendering through `vxt.RenderSingleFile`
+- structured diagnostics across compile, validate, plan, and write stages
+- memory and filesystem output targets
+- explicit post-write hook execution through `ApplyPlan`
+- generated Go bindings through `github.com/vandordev/vxt/bind`
 
-`vxt` also exposes a library-only binding generator through
-`github.com/vandordev/vxt/bind`.
+## Docs Map
 
-The first iteration is intentionally narrow:
+- [Getting started](docs/getting-started.md): first document-mode flow with
+  `MemoryTarget`, then filesystem output.
+- [Document mode](docs/document-mode.md): `.vxt` authoring tutorial and
+  directive reference.
+- [Runtime API](docs/runtime-api.md): compile, validate, plan, write, and apply
+  lifecycle details.
+- [Go bindings](docs/go-bindings.md): generated typed Go package workflow and
+  `bind` package usage.
+- [Concepts](docs/concepts.md): product boundaries, `vx` relationship, runtime
+  vs bindings, and hook model.
+- [v0.1.0 release notes](docs/releases/v0.1.0.md): release scope and
+  verification checklist.
 
-- document mode only
-- generated source is written under `.vxt/`
-- generated bindings are intended to be committed
-- local-path `@use` is embedded into the generated package
+## Public Packages and Release Status
 
-The generated package gives Go consumers a typed `Input` contract and typed
-wrappers over `Compile`, `Validate`, `Plan`, and `Write`.
+`vxt` is in an experimental `v0.x` line. Public packages are intended for Go
+consumers, but controlled breaking changes may still happen before `v1.0.0`.
 
-Minimal usage:
+Documented public packages include:
 
-```go
-out, err := bind.Generate(bind.Request{
-	PackageName: "servicevxt",
-	Document:    mainSource,
-	Uses:        localDefinitionSources,
-})
-if err != nil {
-	panic(err)
-}
+- `github.com/vandordev/vxt`
+- `github.com/vandordev/vxt/runtime`
+- `github.com/vandordev/vxt/bind`
+- `github.com/vandordev/vxt/diag`
+- `github.com/vandordev/vxt/source`
+- `github.com/vandordev/vxt/write`
 
-// write out.Files into .vxt/
-```
-
-Write directly to a generated directory:
-
-```go
-report, err := bind.GenerateToDir(bind.Request{
-	PackageName: "servicevxt",
-	Document:    mainSource,
-	Uses:        localDefinitionSources,
-}, ".vxt", bind.WriteOptions{})
-if err != nil {
-	panic(err)
-}
-
-_ = report
-```
-
-Preview filesystem changes without writing:
-
-```go
-report, err := bind.GenerateToDir(bind.Request{
-	PackageName: "servicevxt",
-	Document:    mainSource,
-	Uses:        localDefinitionSources,
-}, ".vxt", bind.WriteOptions{DryRun: true})
-if err != nil {
-	panic(err)
-}
-
-_ = report
-```
-
-Then consume the generated package:
-
-```go
-plan, err := servicevxt.Plan(servicevxt.Input{
-	Entity: servicevxt.Entity{
-		Name:          "User",
-		PackageName:   "user",
-		HasRepository: true,
-	},
-})
-```
-
-See [docs/releases/v0.1.0.md](docs/releases/v0.1.0.md) for the curated release
-scope and verification checklist.
+Implementation packages under `internal/` are not public API.
 
 ## License and Trademark
 
