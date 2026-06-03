@@ -131,6 +131,43 @@ Planning produces:
 The hook remains metadata unless the caller explicitly uses `ApplyPlan` with a
 `runtime.HookExecutor`.
 
+## Template Expressions
+
+Template expressions use `{{ path.to.value }}` syntax. The path can reference a
+top-level input, a nested object field, or an item introduced by `{{ each ... }}`.
+Expressions can be used in file bodies, `@file` paths, and `@dir` paths.
+
+Add `| filter` to convert text while rendering:
+
+```vxt
+package {{ entity.name | snake }}
+
+type {{ entity.name | pascal }}Service struct{}
+
+func New{{ entity.name | pascal }}Service() *{{ entity.name | pascal }}Service {
+	return &{{ entity.name | pascal }}Service{}
+}
+```
+
+With `entity.name` set to `order item`, this renders `order_item` for the Go
+package name and `OrderItemService` for the exported Go type and function names.
+
+Supported case filters:
+
+| Filter | Example Output | Typical Use |
+| --- | --- | --- |
+| `snake` | `order_item` | Go package names, file or directory names |
+| `upper_snake` | `ORDER_ITEM` | Constants or environment-style names |
+| `kebab` | `order-item` | File names, URL-style names |
+| `pascal` | `OrderItem` | Exported Go structs, interfaces, and functions |
+| `camel` | `orderItem` | Unexported Go variables, fields, and functions |
+| `lower` | `order item` | Plain lowercase text |
+| `upper` | `ORDER ITEM` | Plain uppercase text |
+
+Filters can also normalize existing camel or Pascal input. For example,
+`{{ entity.name | snake }}` renders both `OrderItem` and `order item` as
+`order_item`.
+
 ## Directive Reference
 
 `@template <name>` names a document. It applies at document top level. Main
@@ -158,11 +195,6 @@ file bodies.
 `@file "<path>" [mode=<mode>] ... @endfile` declares one file output. It applies
 at document top level or inside an `@if` block. Supported modes are `create`,
 `overwrite`, and `skip-if-exists`; omitted mode defaults to `create`.
-
-Template expressions use `{{ path.to.value }}` syntax. Add `| filter` to convert
-text when rendering paths or file bodies: `{{ entity.name | snake }}`,
-`{{ entity.name | pascal }}`, or `{{ entity.name | camel }}`. Supported filters
-are `snake`, `upper_snake`, `kebab`, `pascal`, `camel`, `lower`, and `upper`.
 
 `@if <expr> ... @endif` conditionally contributes nested file or directory
 outputs. It applies at document top level. Current parsing rejects nested `@if`
