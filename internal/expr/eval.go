@@ -16,6 +16,27 @@ func EvalPath(ctx map[string]any, path string) (string, error) {
 }
 
 func EvalValue(ctx map[string]any, path string) (any, error) {
+	basePath, filters, err := parsePipeline(path)
+	if err != nil {
+		return nil, err
+	}
+
+	current, err := evalPathValue(ctx, basePath)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, filter := range filters {
+		current, err = applyFilter(current, filter)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return current, nil
+}
+
+func evalPathValue(ctx map[string]any, path string) (any, error) {
 	current, ok := ctx[path]
 	if ok {
 		return current, nil
@@ -40,6 +61,25 @@ func EvalValue(ctx map[string]any, path string) (any, error) {
 	}
 
 	return current, nil
+}
+
+func parsePipeline(input string) (string, []string, error) {
+	parts := strings.Split(input, "|")
+	path := strings.TrimSpace(parts[0])
+	if path == "" {
+		return "", nil, fmt.Errorf("missing expression path")
+	}
+
+	filters := make([]string, 0, len(parts)-1)
+	for _, part := range parts[1:] {
+		filter := strings.TrimSpace(part)
+		if filter == "" {
+			return "", nil, fmt.Errorf("missing filter in %q", input)
+		}
+		filters = append(filters, filter)
+	}
+
+	return path, filters, nil
 }
 
 func IsTruthy(value any) bool {

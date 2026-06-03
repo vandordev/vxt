@@ -114,6 +114,7 @@ supported hook event for `ApplyPlan` is `after:write`.
 
 - document-mode templates with `@template`, `@input`, `@type`, `@dir`,
   `@file`, `@partial`, `@use`, `@if`, and `@hook`
+- expression case filters such as `snake`, `pascal`, `camel`, and `kebab`
 - single-file rendering through `vxt.RenderSingleFile`
 - structured diagnostics across compile, validate, plan, and write stages
 - memory and filesystem output targets

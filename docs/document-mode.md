@@ -21,33 +21,33 @@ This example generates a small Go service package.
 @input entity Entity
 @input options Options
 
-@dir "internal/{{ entity.package_name }}"
+@dir "internal/{{ entity.name | snake }}"
 
 @partial imports
 import "context"
 @endpartial
 
-@file "internal/{{ entity.package_name }}/service.go" mode=overwrite
-package {{ entity.package_name }}
+@file "internal/{{ entity.name | snake }}/service.go" mode=overwrite
+package {{ entity.name | snake }}
 
 {{ include imports }}
 
-type {{ entity.name }}Service struct{}
+type {{ entity.name | pascal }}Service struct{}
 
-func (s {{ entity.name }}Service) Get(ctx context.Context) error {
+func (s {{ entity.name | pascal }}Service) Get(ctx context.Context) error {
 	return nil
 }
 @endfile
 
 @if options.repository
-@file "internal/{{ entity.package_name }}/repository.go"
-package {{ entity.package_name }}
+@file "internal/{{ entity.name | snake }}/repository.go"
+package {{ entity.name | snake }}
 
-type {{ entity.name }}Repository struct{}
+type {{ entity.name | pascal }}Repository struct{}
 @endfile
 @endif
 
-@hook after:write "gofmt -w internal/{{ entity.package_name }}"
+@hook after:write "gofmt -w internal/{{ entity.name | snake }}"
 ```
 
 The referenced definition document can provide shared types:
@@ -55,7 +55,6 @@ The referenced definition document can provide shared types:
 ```vxt
 @type Entity {
   name: string
-  package_name: string
 }
 ```
 
@@ -87,8 +86,10 @@ implemented by the schema validator.
 values. `runtime.ValidateDocument` checks the input map against these
 declarations before planning.
 
-`@dir "internal/{{ entity.package_name }}"` declares a directory output.
-Template expressions in paths are rendered during planning.
+`@dir "internal/{{ entity.name | snake }}"` declares a directory output.
+Template expressions in paths are rendered during planning. Expressions can use
+case filters such as `snake`, `upper_snake`, `kebab`, `pascal`, `camel`,
+`lower`, and `upper`.
 
 `@partial imports ... @endpartial` declares reusable text. Inside a file body,
 `{{ include imports }}` inserts the partial content.
@@ -112,8 +113,7 @@ With input:
 ```go
 map[string]any{
 	"entity": map[string]any{
-		"name":         "User",
-		"package_name": "user",
+		"name": "user profile",
 	},
 	"options": map[string]any{
 		"repository": true,
@@ -123,9 +123,9 @@ map[string]any{
 
 Planning produces:
 
-- directory `internal/user`
-- file `internal/user/service.go`
-- file `internal/user/repository.go`
+- directory `internal/user_profile`
+- file `internal/user_profile/service.go`
+- file `internal/user_profile/repository.go`
 - planned hook metadata for `after:write`
 
 The hook remains metadata unless the caller explicitly uses `ApplyPlan` with a
@@ -158,6 +158,11 @@ file bodies.
 `@file "<path>" [mode=<mode>] ... @endfile` declares one file output. It applies
 at document top level or inside an `@if` block. Supported modes are `create`,
 `overwrite`, and `skip-if-exists`; omitted mode defaults to `create`.
+
+Template expressions use `{{ path.to.value }}` syntax. Add `| filter` to convert
+text when rendering paths or file bodies: `{{ entity.name | snake }}`,
+`{{ entity.name | pascal }}`, or `{{ entity.name | camel }}`. Supported filters
+are `snake`, `upper_snake`, `kebab`, `pascal`, `camel`, `lower`, and `upper`.
 
 `@if <expr> ... @endif` conditionally contributes nested file or directory
 outputs. It applies at document top level. Current parsing rejects nested `@if`

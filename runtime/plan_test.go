@@ -75,6 +75,34 @@ func TestPlanDocumentRendersFilePathsFromInput(t *testing.T) {
 	}
 }
 
+func TestPlanDocumentAppliesCaseFiltersToFilePaths(t *testing.T) {
+	src := source.Source{
+		ID: "plan-case-filter-path-doc.vxt",
+		Text: "@template service\n" +
+			"@input entity_name string\n" +
+			"@file \"internal/{{ entity_name | snake }}/{{ entity_name | kebab }}.go\"\n" +
+			"type {{ entity_name | pascal }}Service struct {}\n" +
+			"@endfile\n",
+	}
+
+	compiled := runtime.CompileDocument(src)
+	validated := runtime.ValidateDocument(compiled.Document, map[string]any{"entity_name": "order item"})
+	result := runtime.PlanDocument(validated)
+
+	if len(result.Diagnostics) != 0 {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+	if len(result.Plan.Files) != 1 {
+		t.Fatalf("got %d files", len(result.Plan.Files))
+	}
+	if result.Plan.Files[0].Path != "internal/order_item/order-item.go" {
+		t.Fatalf("got file path %q", result.Plan.Files[0].Path)
+	}
+	if result.Plan.Files[0].Content != "type OrderItemService struct {}" {
+		t.Fatalf("got content %q", result.Plan.Files[0].Content)
+	}
+}
+
 func TestPlanDocumentRendersLocalPartialIncludes(t *testing.T) {
 	src := source.Source{
 		ID: "plan-partial-doc.vxt",
